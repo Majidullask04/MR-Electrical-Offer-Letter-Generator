@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import type { Company, OfferData, OfferDetail, TermsDetails } from "@/lib/types";
+import type {
+  Company,
+  OfferData,
+  OfferDetail,
+  TermsDetails,
+  TrainingIncrementPolicy,
+} from "@/lib/types";
 
 const termField = z.string().max(5000, "Keep each clause under 5,000 characters.");
 
@@ -108,7 +114,7 @@ export const offerFormSchema = z.object({
       .max(100, "No more than 100%."),
     increment_criteria: z.string().trim().min(2, "Describe the criteria.").max(200),
   })
-    .refine((policy) => policy.post_training_salary_min_inr <= policy.post_training_salary_max_inr, {
+    .refine((policy) => !policy.enabled || policy.post_training_salary_min_inr <= policy.post_training_salary_max_inr, {
       message: "Minimum post-training salary cannot exceed the maximum.",
       path: ["post_training_salary_max_inr"],
     }),
@@ -116,6 +122,20 @@ export const offerFormSchema = z.object({
 });
 
 export type OfferFormValues = z.infer<typeof offerFormSchema>;
+
+export const MR_ELECTRICAL_DEFAULT_POLICY: TrainingIncrementPolicy = {
+  enabled: true,
+  training_period_months: 1,
+  training_monthly_salary_inr: 14000,
+  food_provided: false,
+  site_accommodation_free: true,
+  post_training_salary_min_inr: 18000,
+  post_training_salary_max_inr: 25000,
+  post_training_duration_months: 6,
+  first_increment_after_months: 6,
+  first_increment_max_percent: 30,
+  increment_criteria: "Behaviour and performance",
+};
 
 export const emptyTerms: TermsDetails = {
   probation: "",
@@ -133,19 +153,20 @@ export function emptyOfferForm(company?: Company | null): OfferFormValues {
   const terms: TermsDetails = company?.default_terms
     ? { ...emptyTerms, ...company.default_terms }
     : emptyTerms;
-  const training_policy = company?.default_training_policy ?? {
-    enabled: true,
-    training_period_months: 1,
-    training_monthly_salary_inr: 14000,
-    food_provided: false,
-    site_accommodation_free: true,
-    post_training_salary_min_inr: 18000,
-    post_training_salary_max_inr: 25000,
-    post_training_duration_months: 6,
-    first_increment_after_months: 6,
-    first_increment_max_percent: 30,
-    increment_criteria: "Behaviour and performance",
-  } as TrainingIncrementPolicy;
+  const defaultPolicy = company?.default_training_policy;
+  const training_policy: TrainingIncrementPolicy = {
+    enabled: defaultPolicy?.enabled ?? false,
+    training_period_months: defaultPolicy?.training_period_months ?? 1,
+    training_monthly_salary_inr: defaultPolicy?.training_monthly_salary_inr ?? 14000,
+    food_provided: defaultPolicy?.food_provided ?? false,
+    site_accommodation_free: defaultPolicy?.site_accommodation_free ?? true,
+    post_training_salary_min_inr: defaultPolicy?.post_training_salary_min_inr ?? 18000,
+    post_training_salary_max_inr: defaultPolicy?.post_training_salary_max_inr ?? 25000,
+    post_training_duration_months: defaultPolicy?.post_training_duration_months ?? 6,
+    first_increment_after_months: defaultPolicy?.first_increment_after_months ?? 6,
+    first_increment_max_percent: defaultPolicy?.first_increment_max_percent ?? 30,
+    increment_criteria: defaultPolicy?.increment_criteria ?? "Behaviour and performance",
+  };
   return {
     candidate_id: "",
     template_id: undefined,
@@ -245,8 +266,12 @@ export function toOfferData(values: OfferFormValues): OfferData {
       joining_requirements: values.terms.joining_requirements.trim(),
       additional_clauses: values.terms.additional_clauses.trim(),
     },
+    include_training_policy: values.training_policy.enabled,
+    compensation_mode: values.training_policy.enabled ? "TRAINING_PROGRESSION" : "STANDARD",
     training_policy: {
       enabled: values.training_policy.enabled,
+      include_training_policy: values.training_policy.enabled,
+      compensation_mode: values.training_policy.enabled ? "TRAINING_PROGRESSION" : "STANDARD",
       training_period_months: values.training_policy.training_period_months,
       training_monthly_salary_inr: values.training_policy.training_monthly_salary_inr,
       food_provided: values.training_policy.food_provided,

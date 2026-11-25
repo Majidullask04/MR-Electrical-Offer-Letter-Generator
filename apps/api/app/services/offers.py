@@ -346,6 +346,20 @@ def _build_snapshot(
         "employment": data["employment"],
         "compensation": data["compensation"],
         "terms": terms,
+        "include_training_policy": bool(
+            data.get("include_training_policy")
+            or data.get("compensation_mode") == "TRAINING_PROGRESSION"
+            or (data.get("training_policy") or {}).get("enabled")
+        ),
+        "compensation_mode": data.get(
+            "compensation_mode",
+            "TRAINING_PROGRESSION"
+            if (
+                data.get("include_training_policy")
+                or (data.get("training_policy") or {}).get("enabled")
+            )
+            else "STANDARD",
+        ),
         "training_policy": data.get("training_policy"),
         "show_candidate_signature_block": gen_config.get("show_candidate_signature_block", True),
         "template": {
@@ -1281,6 +1295,19 @@ def serialize_public(offer: Offer, company: CompanyProfile) -> dict[str, Any]:
         "response": offer.response.value if offer.response else None,
         "responded_at": offer.responded_at,
         "compensation": compensation,
+        "training_policy": offer.training_policy or data.get("training_policy"),
+        "include_training_policy": bool(
+            data.get("include_training_policy")
+            or data.get("compensation_mode") == "TRAINING_PROGRESSION"
+            or (offer.training_policy or {}).get("enabled")
+            or (data.get("training_policy") or {}).get("enabled")
+        ),
+        "compensation_mode": data.get(
+            "compensation_mode",
+            "TRAINING_PROGRESSION"
+            if ((offer.training_policy or {}).get("enabled") or (data.get("training_policy") or {}).get("enabled"))
+            else "STANDARD",
+        ),
         "has_responded": offer.response is not None,
         "is_expired": offer.status == OfferStatus.EXPIRED
         or bool(offer.expires_at and offer.expires_at < now),

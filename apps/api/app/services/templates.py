@@ -16,7 +16,9 @@ def sample_snapshot(db: Session, template: OfferTemplate) -> dict:
     now = datetime.now(UTC)
     terms = company.default_terms or DEFAULT_TERMS
     training_policy = company.default_training_policy or {
-        "enabled": True,
+        "enabled": False,
+        "include_training_policy": False,
+        "compensation_mode": "STANDARD",
         "training_period_months": 1,
         "training_monthly_salary_inr": 14000,
         "food_provided": False,
@@ -29,10 +31,15 @@ def sample_snapshot(db: Session, template: OfferTemplate) -> dict:
         "increment_criteria": "Behaviour and performance",
     }
     blocks = dict(get_blocks(db))
-    blocks["training_and_increment_policy"] = documents.render_training_policy_block(training_policy)
+    is_training_active = bool(training_policy.get("enabled") or training_policy.get("include_training_policy"))
+    blocks["training_and_increment_policy"] = (
+        documents.render_training_policy_block(training_policy) if is_training_active else ""
+    )
     return {
         "schema_version": 1,
         "generated_at": now.isoformat(),
+        "include_training_policy": is_training_active,
+        "compensation_mode": "TRAINING_PROGRESSION" if is_training_active else "STANDARD",
         "offer": {
             "number": "MEW-OL-PREVIEW",
             "date": now.isoformat(),

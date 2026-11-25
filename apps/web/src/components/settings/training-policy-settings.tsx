@@ -167,110 +167,111 @@ export function TrainingPolicySettings({ canEdit }: { canEdit: boolean }) {
         description="Default site/training progression applied to new drafts. Issued offers freeze their own snapshot, so changes never rewrite issued letters."
       />
 
-      <label className="inline-flex w-fit cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-ink-2)]">
-        <input
-          type="checkbox"
-          className="h-3.5 w-3.5 accent-[var(--color-accent)]"
-          {...form.register("enabled")}
+      <div className="flex flex-col gap-2 rounded-[var(--radius-panel)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-4">
+        <label className="inline-flex w-fit cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-[var(--color-accent)]"
+            {...form.register("enabled")}
+          />
+          Enable Training &amp; Increment Policy on new offer drafts by default
+        </label>
+        <p className="text-xs text-[var(--color-muted)]">
+          When unchecked, new offers start in standard fixed salary mode and recruiters can opt in per offer. Configure below the default policy values applied whenever activated.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <SectionHeading
+          title="Stage 1 — training period"
+          description="The first month(s) before the post-training revision applies."
         />
-        Include the training & increment policy on new offers
-      </label>
+        <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Field
+            label="Training period (months)"
+            error={form.formState.errors.training_period_months?.message}
+            required
+          >
+            <Input type="number" min={1} max={24} step={1} inputMode="numeric" {...form.register("training_period_months")} />
+          </Field>
+          <Field
+            label="Training monthly salary (INR)"
+            error={form.formState.errors.training_monthly_salary_inr?.message}
+            required
+          >
+            <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_monthly_salary_inr")} />
+          </Field>
+          <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)]">
+            <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("site_accommodation_free")} />
+            Free site accommodation
+          </label>
+          <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)]">
+            <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("food_provided")} />
+            Food provided
+          </label>
+        </div>
+      </div>
 
-      {form.watch("enabled") ? (
-        <>
-          <div className="flex flex-col gap-4">
-            <SectionHeading
-              title="Stage 1 — training period"
-              description="The first month(s) before the post-training revision applies."
-            />
-            <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
-              <Field
-                label="Training period (months)"
-                error={form.formState.errors.training_period_months?.message}
-                required
-              >
-                <Input type="number" min={1} max={24} step={1} inputMode="numeric" {...form.register("training_period_months")} />
-              </Field>
-              <Field
-                label="Training monthly salary (INR)"
-                error={form.formState.errors.training_monthly_salary_inr?.message}
-                required
-              >
-                <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_monthly_salary_inr")} />
-              </Field>
-              <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)]">
-                <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("site_accommodation_free")} />
-                Free site accommodation
-              </label>
-              <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)]">
-                <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("food_provided")} />
-                Food provided
-              </label>
-            </div>
-          </div>
+      <div className="flex flex-col gap-4 border-t border-[var(--color-rule)] pt-5">
+        <SectionHeading
+          title="Stage 2 — post-training salary"
+          description="The performance-based revision band and how long it runs."
+        />
+        <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Field
+            label="Minimum (INR)"
+            error={form.formState.errors.post_training_salary_min_inr?.message}
+            required
+          >
+            <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("post_training_salary_min_inr")} />
+          </Field>
+          <Field
+            label="Maximum (INR)"
+            error={form.formState.errors.post_training_salary_max_inr?.message}
+            required
+          >
+            <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("post_training_salary_max_inr")} />
+          </Field>
+          <Field
+            label="Duration (months)"
+            error={form.formState.errors.post_training_duration_months?.message}
+            required
+          >
+            <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("post_training_duration_months")} />
+          </Field>
+        </div>
+      </div>
 
-          <div className="flex flex-col gap-4 border-t border-[var(--color-rule)] pt-5">
-            <SectionHeading
-              title="Stage 2 — post-training salary"
-              description="The performance-based revision band and how long it runs."
-            />
-            <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
-              <Field
-                label="Minimum (INR)"
-                error={form.formState.errors.post_training_salary_min_inr?.message}
-                required
-              >
-                <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("post_training_salary_min_inr")} />
-              </Field>
-              <Field
-                label="Maximum (INR)"
-                error={form.formState.errors.post_training_salary_max_inr?.message}
-                required
-              >
-                <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("post_training_salary_max_inr")} />
-              </Field>
-              <Field
-                label="Duration (months)"
-                error={form.formState.errors.post_training_duration_months?.message}
-                required
-              >
-                <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("post_training_duration_months")} />
-              </Field>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4 border-t border-[var(--color-rule)] pt-5">
-            <SectionHeading
-              title="Stage 3 — first increment"
-              description="The review window, maximum increment, and criteria."
-            />
-            <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
-              <Field
-                label="After (months)"
-                error={form.formState.errors.first_increment_after_months?.message}
-                required
-              >
-                <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("first_increment_after_months")} />
-              </Field>
-              <Field
-                label="Max increment (%)"
-                error={form.formState.errors.first_increment_max_percent?.message}
-                required
-              >
-                <Input type="number" min={0} max={100} step={1} inputMode="numeric" {...form.register("first_increment_max_percent")} />
-              </Field>
-              <Field
-                label="Criteria"
-                error={form.formState.errors.increment_criteria?.message}
-                required
-                className="lg:col-span-2"
-              >
-                <Input {...form.register("increment_criteria")} />
-              </Field>
-            </div>
-          </div>
-        </>
-      ) : null}
+      <div className="flex flex-col gap-4 border-t border-[var(--color-rule)] pt-5">
+        <SectionHeading
+          title="Stage 3 — first increment"
+          description="The review window, maximum increment, and criteria."
+        />
+        <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Field
+            label="After (months)"
+            error={form.formState.errors.first_increment_after_months?.message}
+            required
+          >
+            <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("first_increment_after_months")} />
+          </Field>
+          <Field
+            label="Max increment (%)"
+            error={form.formState.errors.first_increment_max_percent?.message}
+            required
+          >
+            <Input type="number" min={0} max={100} step={1} inputMode="numeric" {...form.register("first_increment_max_percent")} />
+          </Field>
+          <Field
+            label="Criteria"
+            error={form.formState.errors.increment_criteria?.message}
+            required
+            className="lg:col-span-2"
+          >
+            <Input {...form.register("increment_criteria")} />
+          </Field>
+        </div>
+      </div>
 
       {form.formState.errors.root?.message ? (
         <p className="text-sm leading-relaxed text-[var(--color-bad)]" role="alert">
@@ -306,7 +307,7 @@ function SummaryCard({
 }) {
   return (
     <div className={`flex flex-col gap-1 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] px-3 py-2.5 ${span ? "sm:col-span-2" : ""}`}>
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">{label}</span>
+      <span className="text-[11px] font-medium text-[var(--color-muted)]">{label}</span>
       <span className="text-sm text-[var(--color-ink-2)]">{value}</span>
     </div>
   );

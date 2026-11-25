@@ -133,7 +133,7 @@
     }
 
     .company-block .legal {
-      font-family: "JetBrains Mono", monospace;
+      font-family: "Plus Jakarta Sans", sans-serif;
       font-size: 7.2pt;
       color: #5C6470;
       line-height: 1.5;
@@ -575,6 +575,22 @@
         <td style="width:28mm; padding:3mm 4mm 3mm 2mm; vertical-align:middle; text-align:right;">
           <img src="{{ verification_qr_data_uri }}" alt="Verification QR code"
             style="width:22mm; height:22mm; display:inline-block; vertical-align:middle;">
+        </td>
+      </tr>
+    </table>
+    {% else %}
+    <table style="width:100%; border-collapse:collapse; margin-top:8mm; border:0.5pt dashed #D7DBE0; background:#FAF7F3; break-inside:avoid;">
+      <tr>
+        <td style="padding:3.5mm 4mm; vertical-align:middle;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:7.6pt; font-weight:600; color:{{ primary_color }};">
+            Authenticity verification preview
+          </div>
+          <div style="font-size:8.6pt; color:#121417; margin-top:1mm;">
+            Offer ID: <strong style="font-family:'JetBrains Mono',monospace;">{{ display_offer_id }}</strong>
+          </div>
+          <div style="font-size:7.5pt; color:#5C6470; margin-top:1mm;">
+            Draft preview — QR activates on issue
+          </div>
         </td>
       </tr>
     </table>

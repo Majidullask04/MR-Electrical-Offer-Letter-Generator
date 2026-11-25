@@ -47,6 +47,10 @@ TEMPLATE_PATH = Path(__file__).resolve().parent / "templates" / "offer_letter_de
 def seed_company(db: Session) -> CompanyProfile:
     company = db.scalars(select(CompanyProfile).order_by(CompanyProfile.created_at).limit(1)).first()
     if company:
+        if company.legal_name == "MR ELECTRIC WORKS":
+            company.legal_name = "MR. ELECTRICAL WORKS"
+            db.commit()
+            db.refresh(company)
         print("  company profile already present")
         return company
     company = CompanyProfile(**COMPANY, default_terms=DEFAULT_TERMS, default_training_policy=DEFAULT_TRAINING_POLICY)
@@ -125,7 +129,15 @@ def seed_template(db: Session, company: CompanyProfile, admin: User) -> OfferTem
         select(OfferTemplate).where(OfferTemplate.is_default.is_(True)).order_by(OfferTemplate.created_at)
     ).first()
     if existing:
-        print(f"  default template already present: {existing.name}")
+        current_disk_html = TEMPLATE_PATH.read_text(encoding="utf-8")
+        if existing.html_content != current_disk_html:
+            existing.html_content = current_disk_html
+            existing.version += 1
+            db.commit()
+            db.refresh(existing)
+            print(f"  default template updated to v{existing.version}: {existing.name}")
+        else:
+            print(f"  default template already present: {existing.name}")
         return existing
     html_content = TEMPLATE_PATH.read_text(encoding="utf-8")
     template = OfferTemplate(

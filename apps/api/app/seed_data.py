@@ -8,7 +8,7 @@ terms before issuing real offers.
 
 COMPANY = {
     "name": "MR. ELECTRICAL WORKS",
-    "legal_name": "MR ELECTRIC WORKS",
+    "legal_name": "MR. ELECTRICAL WORKS",
     "tagline": "Turnkey Electrical Engineering & Contracting",
     "website": "https://www.knightsky.in",
     "email": "mrelectricalworks02@gmail.com",
@@ -77,7 +77,9 @@ DEFAULT_TERMS = {
 }
 
 DEFAULT_TRAINING_POLICY = {
-    "enabled": True,
+    "enabled": False,
+    "include_training_policy": False,
+    "compensation_mode": "STANDARD",
     "training_period_months": 1,
     "training_monthly_salary_inr": 14000,
     "food_provided": False,

@@ -173,6 +173,8 @@ export interface TermsDetails {
 
 export interface TrainingIncrementPolicy {
   enabled: boolean;
+  include_training_policy?: boolean;
+  compensation_mode?: "STANDARD" | "TRAINING_PROGRESSION";
   training_period_months: number;
   training_monthly_salary_inr: number;
   food_provided: boolean;
@@ -189,6 +191,8 @@ export interface OfferData {
   employment: EmploymentDetails;
   compensation: CompensationDetails;
   terms: TermsDetails;
+  include_training_policy?: boolean;
+  compensation_mode?: "STANDARD" | "TRAINING_PROGRESSION";
   training_policy: TrainingIncrementPolicy;
 }
 
@@ -436,6 +440,8 @@ export interface PublicOffer {
   responded_at: string | null;
   compensation: CompensationDetails;
   training_policy: TrainingIncrementPolicy | null;
+  include_training_policy?: boolean;
+  compensation_mode?: "STANDARD" | "TRAINING_PROGRESSION";
   has_responded: boolean;
   is_expired: boolean;
   pdf_available: boolean;

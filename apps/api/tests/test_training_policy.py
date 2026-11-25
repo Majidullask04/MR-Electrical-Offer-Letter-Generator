@@ -126,3 +126,185 @@ def test_rendered_pdf_contains_policy_terms():
 
 def test_disabled_policy_renders_nothing():
     assert documents.render_training_policy_block(training_policy(enabled=False)) == ""
+    assert documents.render_training_policy_block(training_policy(enabled=False, include_training_policy=False)) == ""
+
+
+def test_render_offer_document_without_training_policy(db_session):
+    from app.services.offers import get_company, resolve_template
+    company = get_company(db_session)
+    template = resolve_template(db_session, None)
+
+    snapshot = {
+        "schema_version": 1,
+        "offer": {
+            "number": "MEW-OL-TEST-001",
+            "official_number": "MREW/OL/2026/000001",
+            "date": "2026-11-25",
+            "expires_at": "2026-12-09",
+            "revision_number": 1,
+        },
+        "company": {
+            "name": "MR. ELECTRICAL WORKS",
+            "legal_name": "MR. ELECTRICAL WORKS",
+            "tagline": company.tagline,
+            "website": company.website,
+            "email": company.email,
+            "phone": company.phone,
+            "address_line1": company.address_line1,
+            "city": company.city,
+            "state": company.state,
+            "postal_code": company.postal_code,
+            "country": company.country,
+            "primary_color": company.primary_color,
+        },
+        "candidate": {
+            "candidate_code": "CAND-01",
+            "full_name": "Rajesh Kumar",
+            "email": "rajesh@example.com",
+            "phone": "+91 98765 43210",
+        },
+        "employment": {
+            "job_title": "Site Electrical Engineer",
+            "department": "Projects",
+            "employment_type": "FULL_TIME",
+            "joining_date": "2026-12-01",
+            "work_location": "Patancheru Site",
+            "reporting_manager": "Project Head",
+            "probation_months": 3,
+            "working_days": "Monday to Saturday",
+            "working_hours": "9:00 AM to 6:00 PM",
+        },
+        "compensation": {
+            "currency": "INR",
+            "annual_ctc": 360000,
+            "monthly_gross": 30000,
+            "payment_frequency": "MONTHLY",
+            "earnings": [],
+            "deductions": [],
+        },
+        "terms": {
+            "probation": "The first three months are probation.",
+            "notice_period": "One month notice required.",
+        },
+        "include_training_policy": False,
+        "compensation_mode": "STANDARD",
+        "training_policy": training_policy(enabled=False),
+    }
+
+    rendered_html = documents.render_document(template.html_content, snapshot, for_pdf=False)
+
+    # Must have correct company name, without the old typo
+    assert "MR. ELECTRICAL WORKS" in rendered_html
+    assert "MR ELECTRIC WORKS" not in rendered_html
+
+    # Normal salary formatting and grammar
+    assert "₹30,000" in rendered_html
+    assert "₹3,60,000" in rendered_html
+    assert "Salary is paid monthly on the 4th of every month." in rendered_html
+
+    # Must NOT have any training stipend or site facilities progression
+    assert "₹14,000" not in rendered_html
+    assert "1st Month Training Period" not in rendered_html
+    assert "No food provided" not in rendered_html
+    assert "Free accommodation if staying at the working site" not in rendered_html
+    assert "Up to 30% increment" not in rendered_html
+    assert "Compensation Progression &amp; Site Facilities" not in rendered_html
+
+    # Normal probation term is present
+    assert "The first three months are probation." in rendered_html
+
+
+def test_render_offer_document_with_training_policy(db_session):
+    from app.services.offers import get_company, resolve_template
+    company = get_company(db_session)
+    template = resolve_template(db_session, None)
+
+    snapshot = {
+        "schema_version": 1,
+        "offer": {
+            "number": "MEW-OL-TEST-002",
+            "official_number": "MREW/OL/2026/000002",
+            "date": "2026-11-25",
+            "expires_at": "2026-12-09",
+            "revision_number": 1,
+        },
+        "company": {
+            "name": "MR. ELECTRICAL WORKS",
+            "legal_name": "MR. ELECTRICAL WORKS",
+            "tagline": company.tagline,
+            "website": company.website,
+            "email": company.email,
+            "phone": company.phone,
+            "address_line1": company.address_line1,
+            "city": company.city,
+            "state": company.state,
+            "postal_code": company.postal_code,
+            "country": company.country,
+            "primary_color": company.primary_color,
+        },
+        "candidate": {
+            "candidate_code": "CAND-02",
+            "full_name": "Anil Sharma",
+            "email": "anil@example.com",
+            "phone": "+91 98765 43211",
+        },
+        "employment": {
+            "job_title": "Site Technician",
+            "department": "Operations",
+            "employment_type": "FULL_TIME",
+            "joining_date": "2026-12-01",
+            "work_location": "Patancheru Site",
+            "reporting_manager": "Site Supervisor",
+            "probation_months": 3,
+            "working_days": "Monday to Saturday",
+            "working_hours": "9:00 AM to 6:00 PM",
+        },
+        "compensation": {
+            "currency": "INR",
+            "annual_ctc": 168000,
+            "monthly_gross": 14000,
+            "payment_frequency": "MONTHLY",
+            "earnings": [],
+            "deductions": [],
+        },
+        "terms": {
+            "probation": "Standard probation text to be replaced.",
+            "notice_period": "One month notice required.",
+        },
+        "include_training_policy": True,
+        "compensation_mode": "TRAINING_PROGRESSION",
+        "training_policy": training_policy(enabled=True),
+    }
+
+    rendered_html = documents.render_document(template.html_content, snapshot, for_pdf=False)
+
+    # Company name correct
+    assert "MR. ELECTRICAL WORKS" in rendered_html
+    assert "MR ELECTRIC WORKS" not in rendered_html
+
+    # Employment details table shows Training period and Site facilities
+    assert "Training period" in rendered_html
+    assert "1 month" in rendered_html
+    assert "Site facilities" in rendered_html
+    assert "Free accommodation at working site · Food not provided" in rendered_html
+
+    # Compensation progression table is present
+    assert "Compensation Progression &amp; Site Facilities" in rendered_html
+    assert "₹14,000" in rendered_html
+    assert "₹18,000 – ₹25,000" in rendered_html
+    assert "Up to 30% increment" in rendered_html
+    assert "No food provided" in rendered_html
+    assert "Free accommodation if staying at the working site" in rendered_html
+    assert "Behaviour and performance" in rendered_html
+
+    # Dedicated terms clause replaces generic probation
+    assert "Training Period, Accommodation &amp; Increment Policy" in rendered_html
+    assert "Standard probation text to be replaced" not in rendered_html
+
+    # Draft preview notice on verification box
+    assert "Draft preview — QR activates on issue" in rendered_html
+
+    # PDF renders properly
+    pdf = documents.render_pdf(documents.render_document(template.html_content, snapshot, for_pdf=True))
+    assert pdf[:4] == b"%PDF"
+    assert len(pdf) > 5000

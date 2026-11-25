@@ -59,7 +59,9 @@ class TermsDetails(BaseModel):
 
 
 class TrainingIncrementPolicy(BaseModel):
-    enabled: bool = True
+    enabled: bool = False
+    include_training_policy: bool = False
+    compensation_mode: Literal["STANDARD", "TRAINING_PROGRESSION"] = "STANDARD"
     training_period_months: int = Field(default=1, ge=1, le=24)
     training_monthly_salary_inr: float = Field(default=14000, ge=0, le=100_000_000)
     food_provided: bool = False
@@ -81,7 +83,15 @@ class TrainingIncrementPolicy(BaseModel):
 
     @model_validator(mode="after")
     def validate_salary_band(self) -> "TrainingIncrementPolicy":
-        if self.post_training_salary_min_inr > self.post_training_salary_max_inr:
+        is_active = bool(
+            self.enabled
+            or self.include_training_policy
+            or self.compensation_mode == "TRAINING_PROGRESSION"
+        )
+        self.enabled = is_active
+        self.include_training_policy = is_active
+        self.compensation_mode = "TRAINING_PROGRESSION" if is_active else "STANDARD"
+        if is_active and self.post_training_salary_min_inr > self.post_training_salary_max_inr:
             raise ValueError("Post-training minimum salary cannot exceed maximum salary.")
         return self
 
@@ -90,16 +100,29 @@ class OfferData(BaseModel):
     employment: EmploymentDetails
     compensation: CompensationDetails
     terms: TermsDetails
+    include_training_policy: bool = False
+    compensation_mode: Literal["STANDARD", "TRAINING_PROGRESSION"] = "STANDARD"
     training_policy: TrainingIncrementPolicy = Field(default_factory=TrainingIncrementPolicy)
 
     @model_validator(mode="after")
     def sanity_check(self) -> "OfferData":
+        is_active = bool(
+            self.include_training_policy
+            or self.compensation_mode == "TRAINING_PROGRESSION"
+            or self.training_policy.enabled
+        )
+        self.include_training_policy = is_active
+        self.compensation_mode = "TRAINING_PROGRESSION" if is_active else "STANDARD"
+        self.training_policy.enabled = is_active
+        self.training_policy.include_training_policy = is_active
+        self.training_policy.compensation_mode = self.compensation_mode
+
         has_base_comp = (
             self.compensation.monthly_gross > 0
             or self.compensation.annual_ctc > 0
             or bool(self.compensation.stipend and self.compensation.stipend > 0)
         )
-        has_training_comp = self.training_policy.enabled and self.training_policy.training_monthly_salary_inr > 0
+        has_training_comp = is_active and self.training_policy.training_monthly_salary_inr > 0
         if not has_base_comp and not has_training_comp:
             raise ValueError("Compensation must include a positive salary or stipend.")
         return self

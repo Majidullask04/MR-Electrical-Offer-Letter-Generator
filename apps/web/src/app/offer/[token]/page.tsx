@@ -359,7 +359,7 @@ function CandidateOfferContent() {
               ) : null}
             </section>
 
-            {data.training_policy?.enabled ? (
+            {data.training_policy && (data.training_policy.enabled || data.include_training_policy) ? (
               <section aria-labelledby="progression-heading" className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <h2 id="progression-heading" className="font-display text-lg text-[var(--color-ink)]">

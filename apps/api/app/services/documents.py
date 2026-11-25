@@ -221,6 +221,11 @@ def _escaped_paragraphs(text: str | None) -> str:
 
 def _employment_table(snapshot: dict[str, Any]) -> str:
     employment = snapshot["employment"]
+    is_training_active = bool(
+        snapshot.get("include_training_policy")
+        or snapshot.get("compensation_mode") == "TRAINING_PROGRESSION"
+        or (snapshot.get("training_policy") or {}).get("enabled")
+    )
     rows: list[tuple[str, Any]] = [
         ("Job title", employment.get("job_title")),
     ]
@@ -235,6 +240,18 @@ def _employment_table(snapshot: dict[str, Any]) -> str:
             ("Joining date", format_date(employment.get("joining_date"))),
         ]
     )
+    if is_training_active:
+        policy = snapshot.get("training_policy") or {}
+        tp_months = int(policy.get("training_period_months") or 1)
+        tp_label = f"{tp_months} month" if tp_months == 1 else f"{tp_months} months"
+        rows.append(("Training period", tp_label))
+
+        acc_free = policy.get("site_accommodation_free", True)
+        food_prov = policy.get("food_provided", False)
+        acc_text = "Free accommodation at working site" if acc_free else "No site accommodation"
+        food_text = "Food provided" if food_prov else "Food not provided"
+        rows.append(("Site facilities", f"{acc_text} · {food_text}"))
+
     if employment.get("employment_duration"):
         rows.append(("Employment duration", employment.get("employment_duration")))
     rows.extend(
@@ -243,7 +260,7 @@ def _employment_table(snapshot: dict[str, Any]) -> str:
             ("Reporting manager", employment.get("reporting_manager")),
         ]
     )
-    if employment.get("probation_months") is not None:
+    if not is_training_active and employment.get("probation_months") is not None:
         rows.append(
             (
                 "Probation",
@@ -328,11 +345,17 @@ def _compensation_table(snapshot: dict[str, Any]) -> str:
     )
     payment_terms = comp.get("payment_terms")
     clean_payment_terms = str(payment_terms).strip().rstrip(".") if payment_terms else ""
+    if not clean_payment_terms or "4th" in clean_payment_terms.lower():
+        payment_phrase = "Salary is paid monthly on the 4th of every month."
+    elif clean_payment_terms.lower().startswith("on "):
+        payment_phrase = f"Salary is paid {html.escape(str(frequency).lower())} {html.escape(clean_payment_terms)}."
+    else:
+        payment_phrase = f"Salary is paid {html.escape(str(frequency).lower())}. Payment terms: {html.escape(clean_payment_terms)}."
+
     note = (
         f"<p class='muted'>{total_label} in words: {html.escape(amount_in_words(total_annual))}. "
-        f"Salary is paid {html.escape(str(frequency).lower())}."
-        + (f" Payment terms: {html.escape(clean_payment_terms)}." if clean_payment_terms else "")
-        + " Only the deductions listed above are included; no statutory deduction has been assumed in this letter.</p>"
+        f"{payment_phrase} "
+        "Only the deductions listed above are included; no statutory deduction has been assumed in this letter.</p>"
     )
     if comp.get("notes"):
         note += f"<p class='muted'>{html.escape(str(comp['notes']))}</p>"
@@ -341,8 +364,44 @@ def _compensation_table(snapshot: dict[str, Any]) -> str:
 
 def _terms_html(snapshot: dict[str, Any]) -> str:
     terms = snapshot.get("terms") or {}
+    is_training_active = bool(
+        snapshot.get("include_training_policy")
+        or snapshot.get("compensation_mode") == "TRAINING_PROGRESSION"
+        or (snapshot.get("training_policy") or {}).get("enabled")
+    )
     sections = []
     for key, title in TERM_TITLES:
+        if key == "probation" and is_training_active:
+            policy = snapshot.get("training_policy") or {}
+            tp_months = int(policy.get("training_period_months") or 1)
+            tp_str = f"{tp_months}-month" if tp_months == 1 else f"{tp_months}-month"
+            tp_salary = f"{format_inr(policy.get('training_monthly_salary_inr', 14000))} / month"
+            food_text = "food provided" if policy.get("food_provided") else "no food provided"
+            acc_text = (
+                "free accommodation if staying at the working site"
+                if policy.get("site_accommodation_free", True)
+                else "no site accommodation"
+            )
+            p_min = format_inr(policy.get("post_training_salary_min_inr", 18000))
+            p_max = format_inr(policy.get("post_training_salary_max_inr", 25000))
+            p_months = int(policy.get("post_training_duration_months") or 6)
+            inc_months = int(policy.get("first_increment_after_months") or 6)
+            inc_pct = _format_percent(policy.get("first_increment_max_percent", 30))
+            criteria = html.escape(str(policy.get("increment_criteria", "Behaviour and performance")))
+
+            body = (
+                f"<p><strong>1. Training Period ({tp_str})</strong>: Consolidated stipend of {tp_salary}; "
+                f"{food_text}; {acc_text}.</p>"
+                f"<p><strong>2. Post-Training Salary (Next {p_months} Months)</strong>: Revision to {p_min} – {p_max} / month "
+                f"based on performance, continuing for {p_months} months.</p>"
+                f"<p><strong>3. First Increment (After {inc_months} Months)</strong>: Up to {inc_pct}% increment "
+                f"evaluated after {inc_months} months of post-training service based on {criteria.lower()}.</p>"
+            )
+            sections.append(
+                f"<div class='term'><h3>Training Period, Accommodation &amp; Increment Policy</h3>{body}</div>"
+            )
+            continue
+
         body = _escaped_paragraphs(terms.get(key))
         if body:
             sections.append(f"<div class='term'><h3>{title}</h3>{body}</div>")
@@ -383,7 +442,13 @@ def _format_percent(value: float) -> str:
 
 def render_training_policy_block(policy: dict[str, Any] | None) -> str:
     """Render and sanitize the structured training, salary progression, and increment policy block."""
-    if isinstance(policy, dict) and policy.get("enabled") is False:
+    if not policy or not isinstance(policy, dict):
+        return ""
+    if not (
+        policy.get("enabled", False)
+        or policy.get("include_training_policy", False)
+        or policy.get("compensation_mode") == "TRAINING_PROGRESSION"
+    ):
         return ""
     model = TrainingIncrementPolicy.model_validate(policy or {})
     if not model.enabled:
@@ -478,8 +543,15 @@ def build_render_context(snapshot: dict[str, Any], *, for_pdf: bool) -> dict[str
     offer = snapshot["offer"]
     signatory = snapshot.get("signatory") or {}
     blocks = dict(snapshot.get("blocks") or {})
-    if "training_policy" in snapshot:
+    is_training_active = bool(
+        snapshot.get("include_training_policy")
+        or snapshot.get("compensation_mode") == "TRAINING_PROGRESSION"
+        or (snapshot.get("training_policy") or {}).get("enabled")
+    )
+    if is_training_active and "training_policy" in snapshot:
         blocks["training_and_increment_policy"] = render_training_policy_block(snapshot.get("training_policy"))
+    else:
+        blocks["training_and_increment_policy"] = ""
 
     company_address = _company_address_html(company)
     candidate_address = "<br>".join(
@@ -495,6 +567,9 @@ def build_render_context(snapshot: dict[str, Any], *, for_pdf: bool) -> dict[str
     terms = snapshot.get("terms") or {}
     company_name = str(company.get("name") or "MR. ELECTRICAL WORKS").strip()
     name_parts = company_name.rsplit(" ", 1)
+    legal_name = str(company.get("legal_name") or company.get("name") or "MR. ELECTRICAL WORKS").strip()
+    if legal_name == "MR ELECTRIC WORKS":
+        legal_name = "MR. ELECTRICAL WORKS"
     primary_color = str(company.get("primary_color") or "#B35010")
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", primary_color):
         primary_color = "#B35010"
@@ -505,7 +580,7 @@ def build_render_context(snapshot: dict[str, Any], *, for_pdf: bool) -> dict[str
         "company_name_head": name_parts[0],
         "company_name_tail": name_parts[1] if len(name_parts) > 1 else "",
         "primary_color": primary_color,
-        "company_legal_name": company.get("legal_name") or company.get("name"),
+        "company_legal_name": legal_name,
         "company_tagline": company.get("tagline") or "",
         "company_intro": company.get("company_intro") or "",
         "company_address_html": company_address,

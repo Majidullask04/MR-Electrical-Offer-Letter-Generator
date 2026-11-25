@@ -9,6 +9,7 @@ import {
   FileText,
   Plus,
   Search,
+  Sparkles,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { EmptyState, ErrorState } from "@/components/ui/states";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, api } from "@/lib/api";
 import {
+  MR_ELECTRICAL_DEFAULT_POLICY,
   STEP_FIELDS,
   STEP_LABELS,
   emptyOfferForm,
@@ -786,61 +788,291 @@ export function OfferBuilder({ offer }: { offer?: OfferDetail }) {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-col gap-0.5">
-                  <h3 className="font-display text-md text-[var(--color-ink)]">Training &amp; increment policy</h3>
-                  <p className="text-xs text-[var(--color-muted)]">
-                    MR. ELECTRICAL WORKS site/training progression: ₹14k training, ₹18k–₹25k post-training, up to 30% first increment.
+            <div className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex max-w-[540px] flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-md text-[var(--color-ink)]">
+                      Compensation structure &amp; site policy
+                    </h3>
+                    {form.watch("training_policy.enabled") ? (
+                      <span className="rounded-full bg-[var(--color-accent-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent-deep)]">
+                        Training active
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-[var(--color-paper-3)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted)]">
+                        Standard fixed salary
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-[var(--color-muted)]">
+                    Optionally include MR. ELECTRICAL WORKS&apos;s standard 1-month training period (₹14k/mo), free site accommodation, post-training revision (₹18k–₹25k for 6m), and up to 30% first increment.
                   </p>
                 </div>
-                <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-[var(--color-ink-2)]">
-                  <input
-                    type="checkbox"
-                    checked={form.watch("training_policy.enabled")}
-                    onChange={(event) => form.setValue("training_policy.enabled", event.target.checked, { shouldDirty: true, shouldValidate: true })}
-                    className="h-3.5 w-3.5 accent-[var(--color-accent)]"
-                  />
-                  Apply standard site/training policy
-                </label>
+
+                <div className="flex items-center gap-2">
+                  <label className="relative inline-flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-control)] border border-[var(--color-rule-2)] bg-[var(--color-sheet)] px-3.5 py-2 text-xs font-semibold text-[var(--color-ink)] shadow-xs transition-colors hover:border-[var(--color-accent)]">
+                    <input
+                      type="checkbox"
+                      checked={form.watch("training_policy.enabled")}
+                      onChange={(event) =>
+                        form.setValue("training_policy.enabled", event.target.checked, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    Add 1-Month Training &amp; Increment Policy
+                  </label>
+                </div>
               </div>
 
               {form.watch("training_policy.enabled") ? (
-                <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Training period (months)" error={form.formState.errors.training_policy?.training_period_months?.message}>
-                    <Input type="number" min={1} max={24} step={1} inputMode="numeric" {...form.register("training_policy.training_period_months")} />
-                  </Field>
-                  <Field label="Training monthly salary (INR)" error={form.formState.errors.training_policy?.training_monthly_salary_inr?.message}>
-                    <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_policy.training_monthly_salary_inr")} />
-                  </Field>
-                  <Field label="Post-training salary min (INR)" error={form.formState.errors.training_policy?.post_training_salary_min_inr?.message}>
-                    <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_policy.post_training_salary_min_inr")} />
-                  </Field>
-                  <Field label="Post-training salary max (INR)" error={form.formState.errors.training_policy?.post_training_salary_max_inr?.message}>
-                    <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_policy.post_training_salary_max_inr")} />
-                  </Field>
-                  <Field label="Post-training duration (months)" error={form.formState.errors.training_policy?.post_training_duration_months?.message}>
-                    <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("training_policy.post_training_duration_months")} />
-                  </Field>
-                  <Field label="First increment after (months)" error={form.formState.errors.training_policy?.first_increment_after_months?.message}>
-                    <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("training_policy.first_increment_after_months")} />
-                  </Field>
-                  <Field label="First increment max (%)" error={form.formState.errors.training_policy?.first_increment_max_percent?.message}>
-                    <Input type="number" min={0} max={100} step={1} inputMode="numeric" {...form.register("training_policy.first_increment_max_percent")} />
-                  </Field>
-                  <Field label="Increment criteria" error={form.formState.errors.training_policy?.increment_criteria?.message}>
-                    <Input {...form.register("training_policy.increment_criteria")} />
-                  </Field>
-                  <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)] sm:col-span-2">
-                    <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("training_policy.site_accommodation_free")} />
-                    Free site accommodation provided
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)]">
-                    <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("training_policy.food_provided")} />
-                    Food provided
-                  </label>
+                <div className="mt-2 flex flex-col gap-5 border-t border-[var(--color-rule)] pt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-[var(--color-paper)] p-3">
+                    <span className="text-xs font-medium text-[var(--color-ink-2)]">
+                      Standard policy quick-fill:
+                    </span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        form.setValue(
+                          "training_policy",
+                          {
+                            ...MR_ELECTRICAL_DEFAULT_POLICY,
+                            enabled: true,
+                          },
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                        toast.success("Applied MR. ELECTRICAL WORKS standard training & increment defaults.");
+                      }}
+                      className="text-xs"
+                    >
+                      <Sparkles size={13} className="text-[var(--color-accent)]" aria-hidden="true" />
+                      Apply MR. ELECTRICAL WORKS Default (₹14k → ₹18k–₹25k for 6m → up to 30%)
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field
+                      label="Training period (months)"
+                      error={form.formState.errors.training_policy?.training_period_months?.message}
+                      hint="Pre-confirmation site training"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={24}
+                          step={1}
+                          inputMode="numeric"
+                          {...form.register("training_policy.training_period_months")}
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {[1, 2, 3].map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() =>
+                                form.setValue("training_policy.training_period_months", m, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
+                              className="rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-muted)] hover:bg-[var(--color-paper-3)] hover:text-[var(--color-ink)]"
+                            >
+                              {m}m
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </Field>
+
+                    <Field
+                      label="Training monthly salary (INR)"
+                      error={form.formState.errors.training_policy?.training_monthly_salary_inr?.message}
+                      hint={formatINR(Number(form.watch("training_policy.training_monthly_salary_inr")) || 0)}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        step={500}
+                        inputMode="decimal"
+                        {...form.register("training_policy.training_monthly_salary_inr")}
+                      />
+                    </Field>
+
+                    <Field
+                      label="Post-training salary min (INR)"
+                      error={form.formState.errors.training_policy?.post_training_salary_min_inr?.message}
+                      hint={formatINR(Number(form.watch("training_policy.post_training_salary_min_inr")) || 0)}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        step={500}
+                        inputMode="decimal"
+                        {...form.register("training_policy.post_training_salary_min_inr")}
+                      />
+                    </Field>
+
+                    <Field
+                      label="Post-training salary max (INR)"
+                      error={form.formState.errors.training_policy?.post_training_salary_max_inr?.message}
+                      hint={formatINR(Number(form.watch("training_policy.post_training_salary_max_inr")) || 0)}
+                    >
+                      <Input
+                        type="number"
+                        min={0}
+                        step={500}
+                        inputMode="decimal"
+                        {...form.register("training_policy.post_training_salary_max_inr")}
+                      />
+                    </Field>
+
+                    <Field
+                      label="Post-training duration (months)"
+                      error={form.formState.errors.training_policy?.post_training_duration_months?.message}
+                      hint="Before first increment evaluation"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={60}
+                          step={1}
+                          inputMode="numeric"
+                          {...form.register("training_policy.post_training_duration_months")}
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {[3, 6, 12].map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() =>
+                                form.setValue("training_policy.post_training_duration_months", m, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
+                              className="rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-muted)] hover:bg-[var(--color-paper-3)] hover:text-[var(--color-ink)]"
+                            >
+                              {m}m
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </Field>
+
+                    <Field
+                      label="First increment after (months)"
+                      error={form.formState.errors.training_policy?.first_increment_after_months?.message}
+                      hint="Service after training"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={60}
+                          step={1}
+                          inputMode="numeric"
+                          {...form.register("training_policy.first_increment_after_months")}
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {[3, 6, 12].map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() =>
+                                form.setValue("training_policy.first_increment_after_months", m, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
+                              className="rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-muted)] hover:bg-[var(--color-paper-3)] hover:text-[var(--color-ink)]"
+                            >
+                              {m}m
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </Field>
+
+                    <Field
+                      label="First increment max (%)"
+                      error={form.formState.errors.training_policy?.first_increment_max_percent?.message}
+                      hint="Maximum percentage bump"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={1}
+                          inputMode="numeric"
+                          {...form.register("training_policy.first_increment_max_percent")}
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {[10, 20, 30].map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() =>
+                                form.setValue("training_policy.first_increment_max_percent", p, {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
+                              className="rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-muted)] hover:bg-[var(--color-paper-3)] hover:text-[var(--color-ink)]"
+                            >
+                              {p}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </Field>
+
+                    <Field
+                      label="Increment criteria"
+                      error={form.formState.errors.training_policy?.increment_criteria?.message}
+                      hint="Evaluation basis"
+                    >
+                      <Input {...form.register("training_policy.increment_criteria")} />
+                    </Field>
+                  </div>
+
+                  <div className="grid gap-3 pt-2 sm:grid-cols-2">
+                    <label className="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-[var(--color-sheet)] p-3 text-xs font-medium text-[var(--color-ink)]">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                        {...form.register("training_policy.site_accommodation_free")}
+                      />
+                      <span>
+                        <strong>Free site accommodation</strong>: Accommodation free if staying at the working site
+                      </span>
+                    </label>
+
+                    <label className="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-[var(--color-sheet)] p-3 text-xs font-medium text-[var(--color-ink)]">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[var(--color-accent)]"
+                        {...form.register("training_policy.food_provided")}
+                      />
+                      <span>
+                        <strong>Food provided</strong>: Food provided by company (leave unchecked for &quot;No food provided&quot;)
+                      </span>
+                    </label>
+                  </div>
                 </div>
-              ) : null}
+              ) : (
+                <div className="rounded-[var(--radius-control)] border border-dashed border-[var(--color-rule-2)] bg-[var(--color-sheet)] px-4 py-3 text-xs leading-relaxed text-[var(--color-muted)]">
+                  Standard fixed salary mode is selected. The offer letter will render normal consolidated salary without training stipend, site accommodation, or progression clauses.
+                </div>
+              )}
             </div>
           </section>
         ) : null}

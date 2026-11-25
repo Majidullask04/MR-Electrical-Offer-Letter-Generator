@@ -47,6 +47,8 @@ class PublicOfferOut(BaseModel):
     responded_at: datetime | None
     compensation: CompensationDetails
     training_policy: TrainingIncrementPolicy | None = None
+    include_training_policy: bool = False
+    compensation_mode: str = "STANDARD"
     has_responded: bool
     is_expired: bool
     pdf_available: bool
