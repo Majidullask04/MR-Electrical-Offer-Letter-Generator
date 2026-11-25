@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime, time
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, or_, select
 
+from app.config import settings
 from app.deps import AnyStaff, Approver, DbSession, HrOrAdmin, SuperAdmin
 from app.models import Candidate, Offer, OfferStatus
 from app.schemas.common import Page
@@ -24,6 +25,12 @@ from app.schemas.offer import (
 from app.services import documents, offers as offer_service
 
 router = APIRouter(prefix="/offers", tags=["offers"])
+
+
+def _like_term(value: str) -> str:
+    """Escape LIKE wildcards so user input is searched literally."""
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
 
 
 def _date_bounds(date_from: date | None, date_to: date | None):
@@ -46,7 +53,6 @@ def list_offers(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
-    offer_service.expire_stale_offers(db)
     filters = []
     if status_filter:
         try:
@@ -60,18 +66,22 @@ def list_offers(
     if candidate_id:
         filters.append(Offer.candidate_id == candidate_id)
     if candidate_name:
-        filters.append(Candidate.full_name.ilike(f"%{candidate_name.strip()}%"))
+        filters.append(
+            Candidate.full_name.ilike(_like_term(candidate_name.strip()), escape="\\")
+        )
     if position:
-        filters.append(Offer.data["employment"]["job_title"].astext.ilike(f"%{position.strip()}%"))
+        filters.append(
+            Offer.data["employment"]["job_title"].astext.ilike(_like_term(position.strip()), escape="\\")
+        )
     if q:
-        term = f"%{q.strip()}%"
+        term = _like_term(q.strip())
         filters.append(
             or_(
-                Offer.offer_number.ilike(term),
-                Offer.official_offer_number.ilike(term),
-                Candidate.full_name.ilike(term),
-                Candidate.email.ilike(term),
-                Offer.data["employment"]["job_title"].astext.ilike(term),
+                Offer.offer_number.ilike(term, escape="\\"),
+                Offer.official_offer_number.ilike(term, escape="\\"),
+                Candidate.full_name.ilike(term, escape="\\"),
+                Candidate.email.ilike(term, escape="\\"),
+                Offer.data["employment"]["job_title"].astext.ilike(term, escape="\\"),
             )
         )
     start, end = _date_bounds(date_from, date_to)
@@ -125,7 +135,6 @@ def preview_draft(payload: OfferCreate, db: DbSession, user: HrOrAdmin):
 
 @router.get("/{offer_id}", response_model=OfferDetail)
 def get_offer(offer_id: uuid.UUID, db: DbSession, user: AnyStaff):
-    offer_service.expire_stale_offers(db)
     offer = offer_service.get_offer(db, offer_id)
     return offer_service.serialize_detail(offer)
 
@@ -235,10 +244,9 @@ def preview_offer(offer_id: uuid.UUID, db: DbSession, user: AnyStaff):
         headers={
             "Content-Security-Policy": (
                 "default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
-                "font-src data:; base-uri 'none'; form-action 'none'"
+                f"font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'self' {settings.frontend_origin}"
             ),
             "Cache-Control": "private, no-store",
-            "X-Frame-Options": "SAMEORIGIN",
         },
     )
 

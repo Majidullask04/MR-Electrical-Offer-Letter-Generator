@@ -17,7 +17,6 @@ logger = logging.getLogger("offerlater.http")
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 CSRF_EXEMPT_PREFIXES = (
     "/api/v1/auth/login",
-    "/api/v1/auth/logout",
     "/api/v1/public/",
 )
 CSRF_EXEMPT_PATHS = {"/api/v1/health", "/health"}
@@ -75,6 +74,10 @@ class CSRFTokenMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class _BodyTooLarge(Exception):
+    pass
+
+
 class BodySizeLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -98,4 +101,31 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
                         )
                 except ValueError:
                     pass
+            else:
+                # Chunked / streamed request: wrap the ASGI receive channel and
+                # count cumulative bytes so the limit is enforced even without a
+                # Content-Length header.
+                original_receive = request._receive
+                received_bytes = 0
+
+                async def counting_receive():
+                    nonlocal received_bytes
+                    message = await original_receive()
+                    if message["type"] == "http.request":
+                        received_bytes += len(message.get("body", b""))
+                        if received_bytes > limit:
+                            raise _BodyTooLarge()
+                    return message
+
+                request._receive = counting_receive
+                try:
+                    return await call_next(request)
+                except _BodyTooLarge:
+                    return JSONResponse(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        content=error_body(
+                            "PAYLOAD_TOO_LARGE",
+                            "That request is too large. Reduce the content and try again.",
+                        ),
+                    )
         return await call_next(request)

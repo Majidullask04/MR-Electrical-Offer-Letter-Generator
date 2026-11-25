@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.common import ORMModel
+from app.schemas.offer import TrainingIncrementPolicy
 
 
 class CompanyOut(ORMModel):
@@ -45,6 +46,7 @@ class CompanyOut(ORMModel):
     default_working_days: str | None
     default_working_hours: str | None
     default_terms: dict | None
+    default_training_policy: TrainingIncrementPolicy = Field(default_factory=TrainingIncrementPolicy)
     updated_at: datetime
 
 
@@ -84,6 +86,7 @@ class CompanyUpdate(BaseModel):
     default_working_days: str | None = Field(default=None, max_length=120)
     default_working_hours: str | None = Field(default=None, max_length=120)
     default_terms: dict | None = None
+    default_training_policy: TrainingIncrementPolicy | None = None
 
     @field_validator("gst_number", "udyam_number", "cin_number", "company_intro", "signature_image_data", "seal_image_data", mode="before")
     @classmethod

@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from app.models import EmploymentType
-from app.schemas.offer import CompensationComponent
+from app.schemas.offer import CompensationComponent, TrainingIncrementPolicy
 
 
 class VerifyLookupRequest(BaseModel):
@@ -84,6 +84,7 @@ class GeneratorOfferRequest(BaseModel):
     employment_terms: str | None = Field(default=None, max_length=5000)
     additional_instructions: str | None = Field(default=None, max_length=4000)
     template_id: uuid.UUID | None = None
+    training_policy: TrainingIncrementPolicy | None = None
     issue_immediately: bool = False
 
     @field_validator("email", "phone", "candidate_code", "department", "work_location", "reporting_manager", "employment_duration", "payment_terms", "responsibilities", "employment_terms", "additional_instructions", mode="before")

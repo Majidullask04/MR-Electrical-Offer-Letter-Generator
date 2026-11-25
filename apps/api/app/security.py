@@ -24,11 +24,12 @@ def verify_password(password: str, password_hash: str) -> bool:
     return password_hasher.verify(password, password_hash)
 
 
-def create_access_token(user_id: uuid.UUID, roles: set[str]) -> tuple[str, datetime]:
+def create_access_token(user_id: uuid.UUID, roles: set[str], token_version: int = 1) -> tuple[str, datetime]:
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.session_ttl_minutes)
     payload = {
         "sub": str(user_id),
         "roles": sorted(roles),
+        "tv": int(token_version or 1),
         "iss": "offerlater",
         "aud": "offerlater-web",
         "iat": datetime.now(UTC),

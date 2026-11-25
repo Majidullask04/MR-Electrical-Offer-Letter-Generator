@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 
 from app.deps import DbSession, HrOrAdmin
 from app.models import ApprovalRecord, ApprovalStatus, Candidate, Offer, OfferStatus
-from app.schemas.offer import OfferPreviewResponse
+from app.schemas.offer import OfferPreviewResponse, TrainingIncrementPolicy
 from app.schemas.verify import GeneratorOfferRequest
 from app.security import ROLE_HIRING_MANAGER, ROLE_SUPER_ADMIN
 from app.services import documents, offers as offer_service
@@ -93,6 +93,11 @@ def _build_offer_data(db, payload: GeneratorOfferRequest) -> tuple[dict, int]:
             "notes": None,
         },
         "terms": default_terms,
+        "training_policy": (
+            payload.training_policy.model_dump(mode="json")
+            if payload.training_policy is not None
+            else (company.default_training_policy or TrainingIncrementPolicy().model_dump(mode="json"))
+        ),
     }
     return data, validity_days
 
@@ -197,6 +202,7 @@ def generate_offer(
         candidate_id=candidate.id,
         template_id=template.id,
         data=data,
+        training_policy=data.get("training_policy"),
         validity_days=validity_days,
         created_by_id=user.id,
         status=OfferStatus.DRAFT,

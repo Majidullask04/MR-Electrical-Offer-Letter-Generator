@@ -76,7 +76,41 @@ DEFAULT_TERMS = {
     "additional_clauses": "",
 }
 
+DEFAULT_TRAINING_POLICY = {
+    "enabled": True,
+    "training_period_months": 1,
+    "training_monthly_salary_inr": 14000,
+    "food_provided": False,
+    "site_accommodation_free": True,
+    "post_training_salary_min_inr": 18000,
+    "post_training_salary_max_inr": 25000,
+    "post_training_duration_months": 6,
+    "first_increment_after_months": 6,
+    "first_increment_max_percent": 30,
+    "increment_criteria": "Behaviour and performance",
+}
+
 DEFAULT_BLOCKS = [
+    {
+        "key": "training_and_increment_policy",
+        "name": "Training & increment policy",
+        "description": "MR. ELECTRICAL WORKS standard training period, site facilities, post-training salary band, and first increment progression.",
+        "content": (
+            "<div class='training-policy-block'><table class='money'><thead><tr>"
+            "<th>Stage</th><th>Duration / Window</th><th>Compensation / Revision</th><th>Site Facilities &amp; Evaluation</th>"
+            "</tr></thead><tbody>"
+            "<tr><td><strong>1st Month Training Period</strong></td><td>Month 1 (1 Month)</td>"
+            "<td><strong>₹14,000/month</strong></td>"
+            "<td>No food provided<br>Free accommodation if staying at the working site</td></tr>"
+            "<tr><td><strong>Post-Training Salary</strong></td><td>Months 2–7 (6 Months)</td>"
+            "<td><strong>₹18,000 – ₹25,000/month</strong></td>"
+            "<td>Performance-based revision continuing for 6 months.</td></tr>"
+            "<tr><td><strong>First Increment</strong></td><td>After 6 months</td>"
+            "<td><strong>Up to 30% increment</strong></td>"
+            "<td>Reviewed after 6 months of post-training salary based on Behaviour and performance.</td></tr>"
+            "</tbody></table></div>"
+        ),
+    },
     {
         "key": "leave_policy",
         "name": "Leave policy",

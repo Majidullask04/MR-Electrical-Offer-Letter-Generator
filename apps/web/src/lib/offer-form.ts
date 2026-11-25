@@ -74,6 +74,44 @@ export const offerFormSchema = z.object({
     joining_requirements: termField,
     additional_clauses: termField,
   }),
+  training_policy: z.object({
+    enabled: z.boolean(),
+    training_period_months: z.coerce
+      .number({ error: "Enter the training period." })
+      .int("Use whole months.")
+      .min(1, "At least one month.")
+      .max(24, "No more than 24 months."),
+    training_monthly_salary_inr: z.coerce
+      .number({ error: "Enter a training salary." })
+      .min(0, "Cannot be negative."),
+    food_provided: z.boolean(),
+    site_accommodation_free: z.boolean(),
+    post_training_salary_min_inr: z.coerce
+      .number({ error: "Enter a minimum salary." })
+      .min(0, "Cannot be negative."),
+    post_training_salary_max_inr: z.coerce
+      .number({ error: "Enter a maximum salary." })
+      .min(0, "Cannot be negative."),
+    post_training_duration_months: z.coerce
+      .number({ error: "Enter the duration." })
+      .int("Use whole months.")
+      .min(1, "At least one month.")
+      .max(60, "No more than 60 months."),
+    first_increment_after_months: z.coerce
+      .number({ error: "Enter a window." })
+      .int("Use whole months.")
+      .min(1, "At least one month.")
+      .max(60, "No more than 60 months."),
+    first_increment_max_percent: z.coerce
+      .number({ error: "Enter an increment." })
+      .min(0, "Cannot be negative.")
+      .max(100, "No more than 100%."),
+    increment_criteria: z.string().trim().min(2, "Describe the criteria.").max(200),
+  })
+    .refine((policy) => policy.post_training_salary_min_inr <= policy.post_training_salary_max_inr, {
+      message: "Minimum post-training salary cannot exceed the maximum.",
+      path: ["post_training_salary_max_inr"],
+    }),
   internal_notes: z.string().max(4000, "Keep internal notes under 4,000 characters.").optional(),
 });
 
@@ -95,6 +133,19 @@ export function emptyOfferForm(company?: Company | null): OfferFormValues {
   const terms: TermsDetails = company?.default_terms
     ? { ...emptyTerms, ...company.default_terms }
     : emptyTerms;
+  const training_policy = company?.default_training_policy ?? {
+    enabled: true,
+    training_period_months: 1,
+    training_monthly_salary_inr: 14000,
+    food_provided: false,
+    site_accommodation_free: true,
+    post_training_salary_min_inr: 18000,
+    post_training_salary_max_inr: 25000,
+    post_training_duration_months: 6,
+    first_increment_after_months: 6,
+    first_increment_max_percent: 30,
+    increment_criteria: "Behaviour and performance",
+  } as TrainingIncrementPolicy;
   return {
     candidate_id: "",
     template_id: undefined,
@@ -119,6 +170,7 @@ export function emptyOfferForm(company?: Company | null): OfferFormValues {
       deductions: [],
     },
     terms,
+    training_policy,
     internal_notes: "",
   };
 }
@@ -147,6 +199,7 @@ export function offerFormFromDetail(offer: OfferDetail): OfferFormValues {
       })),
     },
     terms: { ...emptyTerms, ...offer.data.terms },
+    training_policy: offer.data.training_policy,
     internal_notes: offer.internal_notes ?? "",
   };
 }
@@ -191,6 +244,19 @@ export function toOfferData(values: OfferFormValues): OfferData {
       company_policies: values.terms.company_policies.trim(),
       joining_requirements: values.terms.joining_requirements.trim(),
       additional_clauses: values.terms.additional_clauses.trim(),
+    },
+    training_policy: {
+      enabled: values.training_policy.enabled,
+      training_period_months: values.training_policy.training_period_months,
+      training_monthly_salary_inr: values.training_policy.training_monthly_salary_inr,
+      food_provided: values.training_policy.food_provided,
+      site_accommodation_free: values.training_policy.site_accommodation_free,
+      post_training_salary_min_inr: values.training_policy.post_training_salary_min_inr,
+      post_training_salary_max_inr: values.training_policy.post_training_salary_max_inr,
+      post_training_duration_months: values.training_policy.post_training_duration_months,
+      first_increment_after_months: values.training_policy.first_increment_after_months,
+      first_increment_max_percent: values.training_policy.first_increment_max_percent,
+      increment_criteria: values.training_policy.increment_criteria.trim() || "Behaviour and performance",
     },
   };
 }

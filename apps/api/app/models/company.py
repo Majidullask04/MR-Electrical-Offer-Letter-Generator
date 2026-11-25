@@ -48,6 +48,7 @@ class CompanyProfile(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     default_working_days: Mapped[str | None] = mapped_column(String(120))
     default_working_hours: Mapped[str | None] = mapped_column(String(120))
     default_terms: Mapped[dict | None] = mapped_column(JSONB)
+    default_training_policy: Mapped[dict | None] = mapped_column(JSONB)
 
 
 class JobPosition(Base, UUIDPrimaryKeyMixin, TimestampMixin):

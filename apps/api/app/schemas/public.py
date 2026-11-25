@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.offer import CompensationDetails
+from app.schemas.offer import CompensationDetails, TrainingIncrementPolicy
 
 
 class PublicCompany(BaseModel):
@@ -46,6 +46,7 @@ class PublicOfferOut(BaseModel):
     response: str | None
     responded_at: datetime | None
     compensation: CompensationDetails
+    training_policy: TrainingIncrementPolicy | None = None
     has_responded: bool
     is_expired: bool
     pdf_available: bool

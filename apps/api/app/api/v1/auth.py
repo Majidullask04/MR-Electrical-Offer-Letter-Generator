@@ -1,5 +1,7 @@
+import uuid
 from datetime import UTC, datetime
 
+import jwt
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -72,7 +74,7 @@ def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "ACCOUNT_INACTIVE", "message": "This account has been deactivated."},
         )
-    token, _ = create_access_token(user.id, user.role_keys)
+    token, _ = create_access_token(user.id, user.role_keys, user.token_version)
     set_auth_cookies(response, token)
     user.last_login_at = datetime.now(UTC)
     record_audit(
@@ -89,8 +91,28 @@ def login(
 
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(response: Response, db: DbSession, request: Request):
+    token = request.cookies.get(settings.session_cookie)
+    if token:
+        try:
+            payload = jwt.decode(
+                token, settings.secret_key, algorithms=["HS256"], options={"verify_exp": False}
+            )
+            user = db.get(User, uuid.UUID(payload["sub"]))
+            if user:
+                user.token_version += 1
+                record_audit(
+                    db,
+                    action="auth.logout",
+                    entity_type="user",
+                    entity_id=user.id,
+                    user=user,
+                    request=request,
+                )
+        except Exception:  # noqa: BLE001 - a stale or malformed session is still cleared
+            pass
     clear_auth_cookies(response)
+    db.commit()
     return {"message": "Signed out."}
 
 
@@ -129,6 +151,7 @@ def change_password(
             detail={"code": "WEAK_PASSWORD", "message": "Use at least 10 characters for the new password."},
         )
     user.password_hash = hash_password(new_password)
+    user.token_version += 1
     record_audit(
         db,
         action="auth.password_changed",

@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import html
 import smtplib
+import time
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from email.message import EmailMessage
 from typing import Any
 
 import httpx
+
+MAX_SEND_ATTEMPTS = 3
+RETRY_DELAY_SECONDS = 1.0
 
 from app.config import settings
 from app.services.storage import save_outbox_email
@@ -45,16 +49,21 @@ class SMTPEmailProvider(EmailProvider):
         message["Subject"] = subject
         message.set_content("This email contains HTML. Please use an HTML-capable mail client.")
         message.add_alternative(html_body, subtype="html")
-        try:
-            with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
-                if settings.smtp_use_tls:
-                    smtp.starttls()
-                if settings.smtp_username:
-                    smtp.login(settings.smtp_username, settings.smtp_password)
-                smtp.send_message(message)
-        except Exception as exc:  # noqa: BLE001 - provider errors are surfaced to the outbox
-            raise EmailProviderError(str(exc)) from exc
-        return "sent"
+        last_error: Exception | None = None
+        for attempt in range(1, MAX_SEND_ATTEMPTS + 1):
+            try:
+                with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
+                    if settings.smtp_use_tls:
+                        smtp.starttls()
+                    if settings.smtp_username:
+                        smtp.login(settings.smtp_username, settings.smtp_password)
+                    smtp.send_message(message)
+                return "sent"
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt < MAX_SEND_ATTEMPTS:
+                    time.sleep(RETRY_DELAY_SECONDS * attempt)
+        raise EmailProviderError(str(last_error)) from last_error
 
 
 class ResendEmailProvider(EmailProvider):
@@ -63,22 +72,27 @@ class ResendEmailProvider(EmailProvider):
     def send(self, recipient: str, subject: str, html_body: str) -> str:
         if not settings.resend_api_key:
             raise EmailProviderError("RESEND_API_KEY is not configured.")
-        try:
-            response = httpx.post(
-                "https://api.resend.com/emails",
-                headers={"Authorization": f"Bearer {settings.resend_api_key}"},
-                json={
-                    "from": settings.email_from,
-                    "to": [recipient],
-                    "subject": subject,
-                    "html": html_body,
-                },
-                timeout=20,
-            )
-            response.raise_for_status()
-        except Exception as exc:  # noqa: BLE001
-            raise EmailProviderError(str(exc)) from exc
-        return "sent"
+        last_error: Exception | None = None
+        for attempt in range(1, MAX_SEND_ATTEMPTS + 1):
+            try:
+                response = httpx.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+                    json={
+                        "from": settings.email_from,
+                        "to": [recipient],
+                        "subject": subject,
+                        "html": html_body,
+                    },
+                    timeout=20,
+                )
+                response.raise_for_status()
+                return "sent"
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt < MAX_SEND_ATTEMPTS:
+                    time.sleep(RETRY_DELAY_SECONDS * attempt)
+        raise EmailProviderError(str(last_error)) from last_error
 
 
 def get_provider() -> EmailProvider:

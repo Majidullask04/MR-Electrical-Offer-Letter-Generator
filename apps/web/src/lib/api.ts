@@ -282,6 +282,8 @@ export const api = {
     get: () => request<Company>("/company"),
     update: (payload: Record<string, unknown>) =>
       request<Company>("/company", { method: "PATCH", body: payload }),
+    updateTrainingPolicy: (payload: Record<string, unknown>) =>
+      request<Company>("/company/training-policy", { method: "PATCH", body: payload }),
   },
   users: {
     list: () => request<StaffUser[]>("/users"),

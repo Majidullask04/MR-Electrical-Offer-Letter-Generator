@@ -15,7 +15,21 @@ def sample_snapshot(db: Session, template: OfferTemplate) -> dict:
     company = get_company(db)
     now = datetime.now(UTC)
     terms = company.default_terms or DEFAULT_TERMS
-    blocks = get_blocks(db)
+    training_policy = company.default_training_policy or {
+        "enabled": True,
+        "training_period_months": 1,
+        "training_monthly_salary_inr": 14000,
+        "food_provided": False,
+        "site_accommodation_free": True,
+        "post_training_salary_min_inr": 18000,
+        "post_training_salary_max_inr": 25000,
+        "post_training_duration_months": 6,
+        "first_increment_after_months": 6,
+        "first_increment_max_percent": 30,
+        "increment_criteria": "Behaviour and performance",
+    }
+    blocks = dict(get_blocks(db))
+    blocks["training_and_increment_policy"] = documents.render_training_policy_block(training_policy)
     return {
         "schema_version": 1,
         "generated_at": now.isoformat(),
@@ -77,6 +91,7 @@ def sample_snapshot(db: Session, template: OfferTemplate) -> dict:
             "notes": None,
         },
         "terms": terms,
+        "training_policy": training_policy,
         "template": {
             "id": str(template.id),
             "name": template.name,

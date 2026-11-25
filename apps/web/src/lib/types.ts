@@ -171,10 +171,25 @@ export interface TermsDetails {
   additional_clauses: string;
 }
 
+export interface TrainingIncrementPolicy {
+  enabled: boolean;
+  training_period_months: number;
+  training_monthly_salary_inr: number;
+  food_provided: boolean;
+  site_accommodation_free: boolean;
+  post_training_salary_min_inr: number;
+  post_training_salary_max_inr: number;
+  post_training_duration_months: number;
+  first_increment_after_months: number;
+  first_increment_max_percent: number;
+  increment_criteria: string;
+}
+
 export interface OfferData {
   employment: EmploymentDetails;
   compensation: CompensationDetails;
   terms: TermsDetails;
+  training_policy: TrainingIncrementPolicy;
 }
 
 export interface OfferDetail extends OfferSummary {
@@ -321,6 +336,7 @@ export interface Company {
   default_working_days: string | null;
   default_working_hours: string | null;
   default_terms: TermsDetails | null;
+  default_training_policy: TrainingIncrementPolicy | null;
   updated_at: string;
 }
 
@@ -419,6 +435,7 @@ export interface PublicOffer {
   response: "ACCEPTED" | "REJECTED" | null;
   responded_at: string | null;
   compensation: CompensationDetails;
+  training_policy: TrainingIncrementPolicy | null;
   has_responded: boolean;
   is_expired: boolean;
   pdf_available: boolean;

@@ -37,7 +37,7 @@ from app.models import (
     User,
 )
 from app.schemas.offer import OfferCreate
-from app.seed_data import COMPANY, DEFAULT_BLOCKS, DEFAULT_TERMS, DEMO_CANDIDATES, DEMO_USERS, POSITIONS, ROLES
+from app.seed_data import COMPANY, DEFAULT_BLOCKS, DEFAULT_TERMS, DEFAULT_TRAINING_POLICY, DEMO_CANDIDATES, DEMO_USERS, POSITIONS, ROLES
 from app.security import hash_password
 from app.services import offers as offer_service
 
@@ -49,7 +49,7 @@ def seed_company(db: Session) -> CompanyProfile:
     if company:
         print("  company profile already present")
         return company
-    company = CompanyProfile(**COMPANY, default_terms=DEFAULT_TERMS)
+    company = CompanyProfile(**COMPANY, default_terms=DEFAULT_TERMS, default_training_policy=DEFAULT_TRAINING_POLICY)
     db.add(company)
     db.commit()
     db.refresh(company)

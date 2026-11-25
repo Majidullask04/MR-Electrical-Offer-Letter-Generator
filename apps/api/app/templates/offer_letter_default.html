@@ -485,6 +485,11 @@
   <h2>Compensation</h2>
   {{ compensation_table|safe }}
 
+  {% if blocks.training_and_increment_policy %}
+  <h2>Compensation Progression &amp; Site Facilities</h2>
+  {{ blocks.training_and_increment_policy|safe }}
+  {% endif %}
+
   <h2>Terms and conditions</h2>
   {{ terms_html|safe }}
   <p class="terms-note">These clauses form part of the offer and are supplied and approved by {{ company_name }}.</p>

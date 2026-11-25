@@ -10,10 +10,11 @@ import { CompanySettings } from "@/components/settings/company-settings";
 import { OutboxSettings } from "@/components/settings/outbox-settings";
 import { TeamSettings } from "@/components/settings/team-settings";
 import { TemplateSettings } from "@/components/settings/template-settings";
+import { TrainingPolicySettings } from "@/components/settings/training-policy-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/lib/auth";
 
-type TabKey = "company" | "templates" | "clauses" | "team" | "audit" | "outbox";
+type TabKey = "company" | "templates" | "clauses" | "training-policy" | "team" | "audit" | "outbox";
 
 export default function SettingsPage() {
   return (
@@ -30,7 +31,7 @@ function SettingsContent() {
 
   const requested = searchParams.get("tab") ?? "company";
   const allowed: TabKey[] = isAdmin
-    ? ["company", "templates", "clauses", "team", "audit", "outbox"]
+    ? ["company", "templates", "clauses", "training-policy", "team", "audit", "outbox"]
     : ["company", "templates", "clauses"];
   const active: TabKey = allowed.includes(requested as TabKey) ? (requested as TabKey) : "company";
 
@@ -61,6 +62,7 @@ function SettingsContent() {
           <TabsTrigger value="company">Company</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="clauses">Clauses</TabsTrigger>
+          {isAdmin ? <TabsTrigger value="training-policy">Training &amp; increment</TabsTrigger> : null}
           {isAdmin ? <TabsTrigger value="team">Team</TabsTrigger> : null}
           {isAdmin ? <TabsTrigger value="audit">Audit log</TabsTrigger> : null}
           {isAdmin ? <TabsTrigger value="outbox">Outbox</TabsTrigger> : null}
@@ -75,6 +77,11 @@ function SettingsContent() {
         <TabsContent value="clauses">
           <ClauseSettings canEdit={isAdmin} />
         </TabsContent>
+        {isAdmin ? (
+          <TabsContent value="training-policy">
+            <TrainingPolicySettings canEdit={isAdmin} />
+          </TabsContent>
+        ) : null}
         {isAdmin ? (
           <TabsContent value="team">
             <TeamSettings />

@@ -72,13 +72,13 @@ function CandidateOfferContent() {
     mutationFn: () =>
       decision === "accept"
         ? api.public.accept(token, {
-            consent,
-            typed_name: (typedName ?? offer?.candidate_name ?? "").trim() || undefined,
-          })
+          consent,
+          typed_name: (typedName ?? offer?.candidate_name ?? "").trim() || undefined,
+        })
         : api.public.reject(token, {
-            consent,
-            reason: rejectReason.trim() || undefined,
-          }),
+          consent,
+          reason: rejectReason.trim() || undefined,
+        }),
     onSuccess: (result) => {
       setConfirmation(result);
       setConfirmOpen(false);
@@ -358,6 +358,46 @@ function CandidateOfferContent() {
                 </p>
               ) : null}
             </section>
+
+            {data.training_policy?.enabled ? (
+              <section aria-labelledby="progression-heading" className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <h2 id="progression-heading" className="font-display text-lg text-[var(--color-ink)]">
+                    Compensation progression &amp; site facilities
+                  </h2>
+                </div>
+                <div className="grid gap-3 border-y border-[var(--color-rule)] py-4 sm:grid-cols-3">
+                  <TimelineStage
+                    stage="Month 1"
+                    title="Training period"
+                    period={`${data.training_policy.training_period_months} month`}
+                    amount={formatINR(data.training_policy.training_monthly_salary_inr)}
+                    note={
+                      data.training_policy.site_accommodation_free
+                        ? "Free accommodation if staying at the working site"
+                        : "No free site accommodation"
+                    }
+                    secondary={
+                      data.training_policy.food_provided ? "Food provided" : "No food provided"
+                    }
+                  />
+                  <TimelineStage
+                    stage="Next 6 months"
+                    title="Post-training salary"
+                    period={`${data.training_policy.post_training_duration_months} months`}
+                    amount={`${formatINR(data.training_policy.post_training_salary_min_inr)} – ${formatINR(data.training_policy.post_training_salary_max_inr)}`}
+                    note="Performance-based revision"
+                  />
+                  <TimelineStage
+                    stage="After 6 months"
+                    title="First increment"
+                    period={`After ${data.training_policy.first_increment_after_months} months`}
+                    amount={`Up to ${data.training_policy.first_increment_max_percent}%`}
+                    note={`Based on ${data.training_policy.increment_criteria}`}
+                  />
+                </div>
+              </section>
+            ) : null}
 
             <section aria-labelledby="company-heading" className="flex flex-col gap-3 border-t border-[var(--color-rule)] pt-6">
               <h2 id="company-heading" className="font-display text-lg text-[var(--color-ink)]">
@@ -688,6 +728,39 @@ function SummaryItem({
         <dt className="text-[10px] font-semibold text-[var(--color-muted)]">{label}</dt>
         <dd className="text-sm text-[var(--color-ink-2)]">{value}</dd>
       </div>
+    </div>
+  );
+}
+
+function TimelineStage({
+  stage,
+  title,
+  period,
+  amount,
+  note,
+  secondary,
+}: {
+  stage: string;
+  title: string;
+  period: string;
+  amount: React.ReactNode;
+  note: string;
+  secondary?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[var(--radius-control)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] px-3.5 py-3">
+      <span className="mono text-[10px] font-semibold uppercase tracking-wide text-[var(--color-accent-deep)]">
+        {stage}
+      </span>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-semibold text-[var(--color-ink)]">{title}</span>
+        <span className="text-[10px] text-[var(--color-muted)]">{period}</span>
+        <span className="figure mt-1 text-lg text-[var(--color-ink)]">{amount}</span>
+      </div>
+      <p className="text-[11px] leading-relaxed text-[var(--color-ink-2)]">{note}</p>
+      {secondary ? (
+        <p className="text-[11px] font-medium text-[var(--color-muted)]">{secondary}</p>
+      ) : null}
     </div>
   );
 }

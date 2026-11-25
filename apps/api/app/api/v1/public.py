@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
 
+from app.config import settings
 from app.deps import DbSession, client_ip
 from app.rate_limit import limiter
 from app.schemas.public import (
@@ -30,10 +31,9 @@ def preview_public_offer(token: str, request: Request, db: DbSession):
         headers={
             "Content-Security-Policy": (
                 "default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
-                "font-src data:; base-uri 'none'; form-action 'none'"
+                f"font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'self' {settings.frontend_origin}"
             ),
             "Cache-Control": "private, no-store",
-            "X-Frame-Options": "SAMEORIGIN",
         },
     )
 

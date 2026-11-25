@@ -19,6 +19,11 @@ from app.services.audit import record_audit
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
 
+def _like_term(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 @router.get("", response_model=Page[CandidateOut])
 def list_candidates(
     db: DbSession,
@@ -32,13 +37,13 @@ def list_candidates(
     if not include_inactive:
         filters.append(Candidate.is_active.is_(True))
     if q:
-        term = f"%{q.strip()}%"
+        term = _like_term(q.strip())
         filters.append(
             or_(
-                Candidate.full_name.ilike(term),
-                Candidate.email.ilike(term),
-                Candidate.applied_position.ilike(term),
-                Candidate.phone.ilike(term),
+                Candidate.full_name.ilike(term, escape="\\"),
+                Candidate.email.ilike(term, escape="\\"),
+                Candidate.applied_position.ilike(term, escape="\\"),
+                Candidate.phone.ilike(term, escape="\\"),
             )
         )
     total = db.scalar(select(func.count()).select_from(Candidate).where(*filters)) or 0

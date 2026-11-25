@@ -58,18 +58,49 @@ class TermsDetails(BaseModel):
     candidate_declaration: str = Field(default="", max_length=2000)
 
 
+class TrainingIncrementPolicy(BaseModel):
+    enabled: bool = True
+    training_period_months: int = Field(default=1, ge=1, le=24)
+    training_monthly_salary_inr: float = Field(default=14000, ge=0, le=100_000_000)
+    food_provided: bool = False
+    site_accommodation_free: bool = True
+    post_training_salary_min_inr: float = Field(default=18000, ge=0, le=100_000_000)
+    post_training_salary_max_inr: float = Field(default=25000, ge=0, le=100_000_000)
+    post_training_duration_months: int = Field(default=6, ge=1, le=60)
+    first_increment_after_months: int = Field(default=6, ge=1, le=60)
+    first_increment_max_percent: float = Field(default=30, ge=0, le=100)
+    increment_criteria: str = Field(default="Behaviour and performance", min_length=2, max_length=200)
+
+    @field_validator("increment_criteria", mode="before")
+    @classmethod
+    def clean_criteria(cls, value: str | None) -> str:
+        if not isinstance(value, str):
+            return "Behaviour and performance"
+        trimmed = value.strip()
+        return trimmed or "Behaviour and performance"
+
+    @model_validator(mode="after")
+    def validate_salary_band(self) -> "TrainingIncrementPolicy":
+        if self.post_training_salary_min_inr > self.post_training_salary_max_inr:
+            raise ValueError("Post-training minimum salary cannot exceed maximum salary.")
+        return self
+
+
 class OfferData(BaseModel):
     employment: EmploymentDetails
     compensation: CompensationDetails
     terms: TermsDetails
+    training_policy: TrainingIncrementPolicy = Field(default_factory=TrainingIncrementPolicy)
 
     @model_validator(mode="after")
     def sanity_check(self) -> "OfferData":
-        if (
-            self.compensation.monthly_gross <= 0
-            and self.compensation.annual_ctc <= 0
-            and not (self.compensation.stipend and self.compensation.stipend > 0)
-        ):
+        has_base_comp = (
+            self.compensation.monthly_gross > 0
+            or self.compensation.annual_ctc > 0
+            or bool(self.compensation.stipend and self.compensation.stipend > 0)
+        )
+        has_training_comp = self.training_policy.enabled and self.training_policy.training_monthly_salary_inr > 0
+        if not has_base_comp and not has_training_comp:
             raise ValueError("Compensation must include a positive salary or stipend.")
         return self
 
@@ -146,6 +177,7 @@ class OfferSummary(BaseModel):
     offer_number: str
     official_offer_number: str | None = None
     status: OfferStatus
+    effective_status: str
     candidate_id: uuid.UUID
     candidate_name: str
     candidate_email: str | None = None

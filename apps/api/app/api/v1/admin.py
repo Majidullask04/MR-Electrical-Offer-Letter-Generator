@@ -16,6 +16,11 @@ router = APIRouter(tags=["administration"])
 
 
 @router.get("/audit-logs", response_model=Page[dict])
+def _like_term(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 def list_audit_logs(
     db: DbSession,
     user: SuperAdmin,
@@ -28,7 +33,7 @@ def list_audit_logs(
 ):
     filters = []
     if action:
-        filters.append(AuditLog.action.ilike(f"%{action}%"))
+        filters.append(AuditLog.action.ilike(_like_term(action), escape="\\"))
     if entity_type:
         filters.append(AuditLog.entity_type == entity_type)
     if date_from:
@@ -111,10 +116,9 @@ def outbox_email_html(
         headers={
             "Content-Security-Policy": (
                 "default-src 'none'; style-src 'unsafe-inline'; img-src data: https:; "
-                "font-src data:; base-uri 'none'; form-action 'none'"
+                f"font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'self' {settings.frontend_origin}"
             ),
             "Cache-Control": "private, no-store",
-            "X-Frame-Options": "SAMEORIGIN",
         },
     )
 

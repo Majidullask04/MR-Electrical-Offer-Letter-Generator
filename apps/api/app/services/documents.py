@@ -10,11 +10,14 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+import bleach
 from jinja2 import BaseLoader, TemplateError
 from jinja2.sandbox import SandboxedEnvironment
 import segno
 from weasyprint import HTML
 from weasyprint.urls import default_url_fetcher
+
+from app.schemas.offer import TrainingIncrementPolicy
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 FONT_DIR = STATIC_DIR / "fonts"
@@ -348,6 +351,106 @@ def _terms_html(snapshot: dict[str, Any]) -> str:
     return "".join(sections)
 
 
+POLICY_ALLOWED_TAGS = [
+    "div",
+    "p",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
+    "strong",
+    "span",
+    "ul",
+    "li",
+    "br",
+]
+POLICY_ALLOWED_ATTRS = {
+    "div": ["class"],
+    "p": ["class"],
+    "table": ["class"],
+    "th": ["class"],
+    "td": ["class"],
+    "span": ["class"],
+}
+
+
+def _format_percent(value: float) -> str:
+    rounded = round(float(value), 2)
+    return str(int(rounded)) if rounded.is_integer() else f"{rounded:g}"
+
+
+def render_training_policy_block(policy: dict[str, Any] | None) -> str:
+    """Render and sanitize the structured training, salary progression, and increment policy block."""
+    if isinstance(policy, dict) and policy.get("enabled") is False:
+        return ""
+    model = TrainingIncrementPolicy.model_validate(policy or {})
+    if not model.enabled:
+        return ""
+
+    training_label = (
+        "1st Month Training Period"
+        if model.training_period_months == 1
+        else f"First {model.training_period_months} Months Training Period"
+    )
+    training_window = (
+        "Month 1 (1 Month)"
+        if model.training_period_months == 1
+        else f"Months 1–{model.training_period_months} ({model.training_period_months} Months)"
+    )
+    post_start = model.training_period_months + 1
+    post_end = model.training_period_months + model.post_training_duration_months
+    post_duration_unit = "Month" if model.post_training_duration_months == 1 else "Months"
+    post_duration_text = f"Months {post_start}–{post_end} ({model.post_training_duration_months} {post_duration_unit})"
+    inc_unit = "month" if model.first_increment_after_months == 1 else "months"
+
+    food_text = "Food provided" if model.food_provided else "No food provided"
+    acc_text = (
+        "Free accommodation if staying at the working site"
+        if model.site_accommodation_free
+        else "No free site accommodation"
+    )
+    training_salary = f"{format_inr(model.training_monthly_salary_inr)}/month"
+    post_salary = (
+        f"{format_inr(model.post_training_salary_min_inr)} – "
+        f"{format_inr(model.post_training_salary_max_inr)}/month"
+    )
+    pct_text = f"Up to {_format_percent(model.first_increment_max_percent)}% increment"
+    criteria_text = html.escape(model.increment_criteria)
+
+    raw_html = (
+        "<div class='training-policy-block'>"
+        "<table class='money'>"
+        "<thead><tr>"
+        "<th>Stage</th><th>Duration / Window</th><th>Compensation / Revision</th><th>Site Facilities &amp; Evaluation</th>"
+        "</tr></thead>"
+        "<tbody>"
+        "<tr>"
+        f"<td><strong>{html.escape(training_label)}</strong></td>"
+        f"<td>{html.escape(training_window)}</td>"
+        f"<td><strong>{html.escape(training_salary)}</strong></td>"
+        f"<td>{html.escape(food_text)}<br>{html.escape(acc_text)}</td>"
+        "</tr>"
+        "<tr>"
+        "<td><strong>Post-Training Salary</strong></td>"
+        f"<td>{html.escape(post_duration_text)}</td>"
+        f"<td><strong>{html.escape(post_salary)}</strong></td>"
+        f"<td>Performance-based revision continuing for {model.post_training_duration_months} {post_duration_unit.lower()}.</td>"
+        "</tr>"
+        "<tr>"
+        f"<td><strong>First Increment</strong></td>"
+        f"<td>After {model.first_increment_after_months} {inc_unit}</td>"
+        f"<td><strong>{html.escape(pct_text)}</strong></td>"
+        f"<td>Reviewed after {model.first_increment_after_months} {inc_unit} of post-training salary based on {criteria_text}.</td>"
+        "</tr>"
+        "</tbody>"
+        "</table>"
+        "</div>"
+    )
+    return bleach.clean(raw_html, tags=POLICY_ALLOWED_TAGS, attributes=POLICY_ALLOWED_ATTRS, strip=True)
+
+
 def _company_address_html(company: dict[str, Any]) -> str:
     parts = [
         company.get("address_line1"),
@@ -374,7 +477,9 @@ def build_render_context(snapshot: dict[str, Any], *, for_pdf: bool) -> dict[str
     compensation = snapshot["compensation"]
     offer = snapshot["offer"]
     signatory = snapshot.get("signatory") or {}
-    blocks = snapshot.get("blocks") or {}
+    blocks = dict(snapshot.get("blocks") or {})
+    if "training_policy" in snapshot:
+        blocks["training_and_increment_policy"] = render_training_policy_block(snapshot.get("training_policy"))
 
     company_address = _company_address_html(company)
     candidate_address = "<br>".join(

@@ -1,10 +1,13 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+DEFAULT_SECRET_KEY = "dev-only-change-me-please-32-chars-minimum"
+DEFAULT_SEED_ADMIN_PASSWORD = "OfferLater!2026"
 
 
 class Settings(BaseSettings):
@@ -29,6 +32,12 @@ class Settings(BaseSettings):
     cookie_domain: str | None = None
 
     storage_dir: Path = BASE_DIR / "storage"
+    storage_backend: str = "local"
+    s3_bucket: str = ""
+    s3_endpoint_url: str = ""
+    s3_region: str = ""
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
 
     email_provider: str = "console"
     email_from: str = "MR. ELECTRICAL WORKS <offers@example.com>"
@@ -43,6 +52,8 @@ class Settings(BaseSettings):
 
     seed_admin_email: str = "admin@mrelectricalworks.in"
     seed_admin_password: str = "OfferLater!2026"
+    trusted_proxy_count: int = 1
+    frontend_origin: str = "http://localhost:3000"
 
     @field_validator("database_url", mode="before")
     @classmethod
@@ -62,6 +73,19 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env.lower() in {"production", "prod"}
+
+    @model_validator(mode="after")
+    def production_security_guard(self) -> "Settings":
+        if self.is_production:
+            if not self.secret_key or len(self.secret_key) < 32 or self.secret_key == DEFAULT_SECRET_KEY:
+                raise ValueError(
+                    "secret_key must be replaced with a value of at least 32 characters in production."
+                )
+            if not self.seed_admin_password or self.seed_admin_password == DEFAULT_SEED_ADMIN_PASSWORD:
+                raise ValueError("seed_admin_password must be changed from the default in production.")
+            if self.email_provider.strip().lower() == "console":
+                raise ValueError("email_provider must not be 'console' in production.")
+        return self
 
     @property
     def session_cookie(self) -> str:

@@ -161,6 +161,13 @@ def next_official_offer_number(db: Session, company: CompanyProfile) -> str:
         return f"{prefix}/{year}/{seq_val:06d}"
 
 
+def _effective_status(offer: Offer) -> OfferStatus:
+    now = datetime.now(UTC)
+    if offer.status in ISSUED_LIKE and offer.expires_at and offer.expires_at < now:
+        return OfferStatus.EXPIRED
+    return offer.status
+
+
 def serialize_summary(offer: Offer) -> dict[str, Any]:
     data = offer.data or {}
     employment = data.get("employment") or {}
@@ -171,6 +178,7 @@ def serialize_summary(offer: Offer) -> dict[str, Any]:
         "offer_number": offer.offer_number,
         "official_offer_number": offer.official_offer_number,
         "status": offer.status,
+        "effective_status": _effective_status(offer).value,
         "candidate_id": offer.candidate_id,
         "candidate_name": candidate.full_name if candidate else "Unknown candidate",
         "candidate_email": candidate.email if candidate else None,
@@ -338,6 +346,7 @@ def _build_snapshot(
         "employment": data["employment"],
         "compensation": data["compensation"],
         "terms": terms,
+        "training_policy": data.get("training_policy"),
         "show_candidate_signature_block": gen_config.get("show_candidate_signature_block", True),
         "template": {
             "id": str(template.id),
@@ -448,6 +457,7 @@ def create_offer(db: Session, payload: OfferCreate, user: User, request=None) ->
         created_by_id=user.id,
         status=OfferStatus.DRAFT,
         draft_revision_number=1,
+        training_policy=payload.data.training_policy.model_dump(mode="json"),
     )
     db.add(offer)
     db.flush()
@@ -510,6 +520,7 @@ def update_offer(
         offer.validity_days = payload.validity_days
     if payload.data is not None:
         offer.data = payload.data.model_dump(mode="json")
+        offer.training_policy = offer.data.get("training_policy")
     if payload.internal_notes is not None:
         offer.internal_notes = payload.internal_notes
     record_event(

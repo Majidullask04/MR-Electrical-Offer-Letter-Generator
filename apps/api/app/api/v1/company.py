@@ -5,10 +5,11 @@ import uuid
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import func, select
 
-from app.deps import AnyStaff, DbSession, SuperAdmin
+from app.deps import AnyStaff, DbSession, HrOrAdmin, SuperAdmin
 from app.models import Role, User
 from app.schemas.auth import UserCreate, UserOut, UserUpdate
 from app.schemas.company import CompanyOut, CompanyUpdate
+from app.schemas.offer import TrainingIncrementPolicy
 from app.security import ALL_ROLES, hash_password
 from app.services.audit import record_audit
 from app.services.offers import get_company
@@ -61,6 +62,29 @@ def update_company_settings(
         entity_id=company.id,
         user=user,
         metadata={"fields": sorted(changes.keys())},
+        request=request,
+    )
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+@router.patch("/company/training-policy", response_model=CompanyOut)
+def update_training_policy_defaults(
+    payload: TrainingIncrementPolicy,
+    db: DbSession,
+    user: HrOrAdmin,
+    request: Request,
+):
+    company = get_company(db)
+    company.default_training_policy = payload.model_dump(mode="json")
+    record_audit(
+        db,
+        action="company.training_policy_updated",
+        entity_type="company_profile",
+        entity_id=company.id,
+        user=user,
+        metadata={"default_training_policy": company.default_training_policy},
         request=request,
     )
     db.commit()
@@ -188,6 +212,9 @@ def update_user(
         target.is_active = changes["is_active"]
     if changes.get("password"):
         target.password_hash = hash_password(changes["password"])
+    if changes.get("role_key") or changes.get("is_active") is not None or changes.get("password"):
+        # Invalidate any existing JWTs so stolen sessions die immediately.
+        target.token_version += 1
     record_audit(
         db,
         action="user.updated",

@@ -90,6 +90,7 @@ class Offer(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
     )
     data: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    training_policy: Mapped[dict | None] = mapped_column(JSONB)
     validity_days: Mapped[int] = mapped_column(Integer, default=14, nullable=False)
     internal_notes: Mapped[str | None] = mapped_column(Text)
     draft_revision_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)

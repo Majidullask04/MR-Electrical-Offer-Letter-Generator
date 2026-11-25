@@ -36,11 +36,24 @@ def get_current_user(
             detail={"code": "SESSION_EXPIRED", "message": "Your session has expired. Sign in again."},
         ) from exc
 
-    user = db.get(User, uuid.UUID(payload["sub"]))
+    try:
+        user_id = uuid.UUID(payload["sub"])
+    except (KeyError, ValueError, TypeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "SESSION_EXPIRED", "message": "Your session is invalid. Sign in again."},
+        ) from exc
+
+    user = db.get(User, user_id)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "ACCOUNT_INACTIVE", "message": "This account is not active."},
+        )
+    if int(payload.get("tv", 1)) != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "SESSION_REVOKED", "message": "Your session is no longer valid. Sign in again."},
         )
     return user
 
@@ -74,8 +87,16 @@ AnyStaff = Annotated[
 
 def client_ip(request: Request) -> str | None:
     forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    if forwarded and settings.trusted_proxy_count > 0:
+        parts = [part.strip() for part in forwarded.split(",")]
+        # Each trusted proxy appends the originating IP on the right, so the
+        # rightmost TRUSTED_PROXY_COUNT values are trusted hop addresses. Skip
+        # them to expose the genuine client IP (ignoring spoofed leftmost hops).
+        index = len(parts) - settings.trusted_proxy_count - 1
+        index = max(0, min(index, len(parts) - 1))
+        client = parts[index] if parts else None
+        if client:
+            return client
     return request.client.host if request.client else None
 
 

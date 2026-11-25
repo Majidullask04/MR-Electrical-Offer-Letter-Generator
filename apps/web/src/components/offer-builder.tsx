@@ -270,8 +270,7 @@ export function OfferBuilder({ offer }: { offer?: OfferDetail }) {
           return;
         } catch (error) {
           toast.error(
-            `Draft saved, but submission failed: ${
-              error instanceof Error ? error.message : "try again from the offer page."
+            `Draft saved, but submission failed: ${error instanceof Error ? error.message : "try again from the offer page."
             }`,
           );
           router.push(`/offers/${savedId}`);
@@ -785,6 +784,63 @@ export function OfferBuilder({ offer }: { offer?: OfferDetail }) {
                     : `Difference of ${formatINR(Math.round(difference))}. The letter prints both figures; reconcile before issuing.`}
                 </p>
               </div>
+            </div>
+
+            <div className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="font-display text-md text-[var(--color-ink)]">Training &amp; increment policy</h3>
+                  <p className="text-xs text-[var(--color-muted)]">
+                    MR. ELECTRICAL WORKS site/training progression: ₹14k training, ₹18k–₹25k post-training, up to 30% first increment.
+                  </p>
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-[var(--color-ink-2)]">
+                  <input
+                    type="checkbox"
+                    checked={form.watch("training_policy.enabled")}
+                    onChange={(event) => form.setValue("training_policy.enabled", event.target.checked, { shouldDirty: true, shouldValidate: true })}
+                    className="h-3.5 w-3.5 accent-[var(--color-accent)]"
+                  />
+                  Apply standard site/training policy
+                </label>
+              </div>
+
+              {form.watch("training_policy.enabled") ? (
+                <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
+                  <Field label="Training period (months)" error={form.formState.errors.training_policy?.training_period_months?.message}>
+                    <Input type="number" min={1} max={24} step={1} inputMode="numeric" {...form.register("training_policy.training_period_months")} />
+                  </Field>
+                  <Field label="Training monthly salary (INR)" error={form.formState.errors.training_policy?.training_monthly_salary_inr?.message}>
+                    <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_policy.training_monthly_salary_inr")} />
+                  </Field>
+                  <Field label="Post-training salary min (INR)" error={form.formState.errors.training_policy?.post_training_salary_min_inr?.message}>
+                    <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_policy.post_training_salary_min_inr")} />
+                  </Field>
+                  <Field label="Post-training salary max (INR)" error={form.formState.errors.training_policy?.post_training_salary_max_inr?.message}>
+                    <Input type="number" min={0} step={100} inputMode="decimal" {...form.register("training_policy.post_training_salary_max_inr")} />
+                  </Field>
+                  <Field label="Post-training duration (months)" error={form.formState.errors.training_policy?.post_training_duration_months?.message}>
+                    <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("training_policy.post_training_duration_months")} />
+                  </Field>
+                  <Field label="First increment after (months)" error={form.formState.errors.training_policy?.first_increment_after_months?.message}>
+                    <Input type="number" min={1} max={60} step={1} inputMode="numeric" {...form.register("training_policy.first_increment_after_months")} />
+                  </Field>
+                  <Field label="First increment max (%)" error={form.formState.errors.training_policy?.first_increment_max_percent?.message}>
+                    <Input type="number" min={0} max={100} step={1} inputMode="numeric" {...form.register("training_policy.first_increment_max_percent")} />
+                  </Field>
+                  <Field label="Increment criteria" error={form.formState.errors.training_policy?.increment_criteria?.message}>
+                    <Input {...form.register("training_policy.increment_criteria")} />
+                  </Field>
+                  <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)] sm:col-span-2">
+                    <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("training_policy.site_accommodation_free")} />
+                    Free site accommodation provided
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-xs text-[var(--color-ink-2)]">
+                    <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-accent)]" {...form.register("training_policy.food_provided")} />
+                    Food provided
+                  </label>
+                </div>
+              ) : null}
             </div>
           </section>
         ) : null}
