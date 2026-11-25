@@ -6,7 +6,7 @@ from app.models import Offer, OfferRevision
 from app.schemas.offer import TrainingIncrementPolicy
 from app.services import documents, offers
 
-from tests.helpers import create_candidate, create_offer, move_to_issued, patch, post
+from tests.helpers import create_candidate, create_offer, move_to_issued, offer_data, patch, post
 
 
 def training_policy(**overrides) -> dict:
@@ -72,10 +72,12 @@ def test_policy_rejects_invalid_increment():
 
 def test_snapshot_freezes_policy(admin_client, hr_client, hiring_client, db_session):
     candidate = create_candidate(admin_client)
+    data = offer_data()
+    data["training_policy"] = training_policy()
     offer = create_offer(
         admin_client,
         candidate["id"],
-        data={"training_policy": training_policy()},
+        data=data,
     )
     offer_id = offer["id"]
 
@@ -110,7 +112,7 @@ def test_rendered_html_contains_policy_terms():
     assert "Up to 30% increment" in html
     assert "No food provided" in html
     assert "Free accommodation if staying at the working site" in html
-    assert "Behav and performance" in html
+    assert "Behaviour and performance" in html
 
 
 def test_rendered_pdf_contains_policy_terms():

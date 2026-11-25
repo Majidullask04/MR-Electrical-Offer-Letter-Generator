@@ -46,6 +46,15 @@ def test_offer_preview_create_and_validation(hr_client, seeded_database):
     invalid = offer_data()
     invalid["compensation"]["annual_ctc"] = 0
     invalid["compensation"]["monthly_gross"] = 0
+    # Explicitly disable training policy so zero salary is still rejected (Section 5 sanity_check
+    # now allows zero base salary when training_policy.enabled=True — disable it here to keep the
+    # original assertion: zero salary without any compensation source → 422).
+    invalid["training_policy"] = {"enabled": False, "training_period_months": 1,
+                                   "training_monthly_salary_inr": 14000, "food_provided": False,
+                                   "site_accommodation_free": True, "post_training_salary_min_inr": 18000,
+                                   "post_training_salary_max_inr": 25000, "post_training_duration_months": 6,
+                                   "first_increment_after_months": 6, "first_increment_max_percent": 30,
+                                   "increment_criteria": "Behaviour and performance"}
     rejected = post(
         hr_client,
         "/api/v1/offers",
