@@ -1,0 +1,37 @@
+databases:
+  - name: offerlater-db
+    plan: free
+    databaseName: offerlater
+    user: offerlater
+
+services:
+  - type: web
+    name: offerlater-api
+    runtime: docker
+    plan: free
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: FRONTEND_URL
+        value: https://mr-electrical-offer-letter-generator.vercel.app
+      - key: CORS_ORIGINS
+        value: https://mr-electrical-offer-letter-generator.vercel.app
+      - key: STORAGE_DIR
+        value: /tmp/storage
+      - key: EMAIL_PROVIDER
+        value: console
+      - key: SEED_ADMIN_EMAIL
+        value: admin@mrelectricalworks.in
+      - key: SEED_ADMIN_PASSWORD
+        value: OfferLater!2026
+      - key: DATABASE_URL
+        fromDatabase:
+          name: offerlater-db
+          property: connectionString

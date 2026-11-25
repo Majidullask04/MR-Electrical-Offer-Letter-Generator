@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,6 +43,17 @@ class Settings(BaseSettings):
 
     seed_admin_email: str = "admin@mrelectricalworks.in"
     seed_admin_password: str = "OfferLater!2026"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        if isinstance(value, str):
+            val = value.strip()
+            if val.startswith("postgres://"):
+                return "postgresql+psycopg://" + val[len("postgres://") :]
+            if val.startswith("postgresql://"):
+                return "postgresql+psycopg://" + val[len("postgresql://") :]
+        return value
 
     @property
     def cors_origin_list(self) -> list[str]:

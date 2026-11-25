@@ -1297,23 +1297,28 @@ def public_pdf(db: Session, token: str) -> tuple[bytes, str]:
             detail={"code": "DOCUMENT_NOT_FOUND", "message": "The offer document is not available."},
         )
     revision = offer.current_revision
-    if not revision.pdf_path:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "DOCUMENT_NOT_FOUND", "message": "The offer document is not available."},
-        )
+    candidate_name = offer.candidate.full_name if offer.candidate else "Candidate"
+    display_id = revision.official_offer_number or offer.official_offer_number or offer.offer_number
+    filename = documents.pdf_download_filename(display_id, candidate_name)
     offer.token_last_used_at = datetime.now(UTC)
-    db.commit()
+    if revision.pdf_path:
+        try:
+            content = read_pdf(revision.pdf_path)
+            db.commit()
+            return content, filename
+        except Exception:  # noqa: BLE001 - regenerate if ephemeral disk was cleared
+            pass
     try:
-        content = read_pdf(revision.pdf_path)
+        content = documents.render_pdf(revision.rendered_html)
+        revision.pdf_path = save_pdf(offer.id, revision.revision_number, content)
     except Exception as exc:  # noqa: BLE001
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "DOCUMENT_NOT_FOUND", "message": "The offer document is not available."},
         ) from exc
-    candidate_name = offer.candidate.full_name if offer.candidate else "Candidate"
-    display_id = revision.official_offer_number or offer.official_offer_number or offer.offer_number
-    return content, documents.pdf_download_filename(display_id, candidate_name)
+    db.commit()
+    return content, filename
 
 
 def accept_public_offer(

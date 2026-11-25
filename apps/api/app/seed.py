@@ -78,6 +78,10 @@ def seed_users(db: Session, roles: dict[str, Role]) -> dict[str, User]:
         "HIRING_MANAGER": "HiringManager!2026",
     }
     for email, full_name, role_key, _ in DEMO_USERS:
+        if role_key == "SUPER_ADMIN":
+            email = settings.seed_admin_email
+        elif settings.is_production:
+            continue
         user = db.scalars(select(User).where(func.lower(User.email) == email.lower())).first()
         if user:
             if role_key not in user.role_keys:
@@ -373,15 +377,16 @@ def main() -> None:
                 db, candidates=candidates, template=template, users=users
             )
 
-    print("")
-    print("Staff sign-in")
-    print(f"  Super Admin     {settings.seed_admin_email} / {settings.seed_admin_password}")
-    print("  HR Manager      hr@mrelectricalworks.in / HrManager!2026")
-    print("  Hiring Manager  hiring@mrelectricalworks.in / HiringManager!2026")
-    if issued_link:
+    if not settings.is_production:
         print("")
-        print("Demo candidate portal (issued offer)")
-        print(f"  {issued_link}")
+        print("Staff sign-in")
+        print(f"  Super Admin     {settings.seed_admin_email} / {settings.seed_admin_password}")
+        print("  HR Manager      hr@mrelectricalworks.in / HrManager!2026")
+        print("  Hiring Manager  hiring@mrelectricalworks.in / HiringManager!2026")
+        if issued_link:
+            print("")
+            print("Demo candidate portal (issued offer)")
+            print(f"  {issued_link}")
     print("")
     print("The seeded clause text is neutral starter copy, not legal advice.")
     print("Review company details and replace the terms before issuing a real offer.")
