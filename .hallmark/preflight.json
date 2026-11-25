@@ -1,0 +1,21 @@
+{
+  "scanned": "2026-11-25",
+  "findings": {
+    "fonts": "Outfit, Plus Jakarta Sans, JetBrains Mono (fetched from knightsky.in CSS)",
+    "palette": "#b35010 copper, #121417 steel, #0e639c signal blue, warm off-white surfaces (fetched from knightsky.in CSS)",
+    "motion": "not yet scaffolded; state-only motion planned",
+    "spacing": "to be defined: 4pt scale",
+    "framework": "Next.js App Router + Tailwind, FastAPI backend (greenfield)"
+  },
+  "preserve": [
+    "official MR. ELECTRICAL WORKS identity, logo and shield mark",
+    "brand fonts and copper/steel/blue palette",
+    "published company facts only"
+  ],
+  "introduce": [
+    "Hallmark gates and app-screen states",
+    "technical dossier direction with keylines, measured figures and an offer trail",
+    "one accent for primary actions and current state",
+    "fixed type scale for app screens"
+  ]
+}

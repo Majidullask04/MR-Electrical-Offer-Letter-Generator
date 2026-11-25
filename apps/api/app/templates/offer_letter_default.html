@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>{{ offer_number }} — Offer of Employment</title>
+  <style>
+    {
+        {
+        font_face_css|safe
+      }
+    }
+
+    @page {
+      size: A4;
+      margin: 20mm 17mm 23mm 17mm;
+
+      @top-left {
+        content: "{{ company_name }}";
+        font-family: "Plus Jakarta Sans", sans-serif;
+        font-size: 7.5pt;
+        color: #6B6F76;
+        padding-bottom: 3mm;
+      }
+
+      @top-right {
+        content: "{{ display_offer_id }}";
+        font-family: "JetBrains Mono", monospace;
+        font-size: 7.5pt;
+        color: #6B6F76;
+        padding-bottom: 3mm;
+      }
+
+      @bottom-left {
+        content: "{{ footer_identity }}";
+        font-family: "Plus Jakarta Sans", sans-serif;
+        font-size: 6.8pt;
+        color: #6B6F76;
+        padding-top: 3mm;
+      }
+
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 7pt;
+        color: #6B6F76;
+        padding-top: 3mm;
+      }
+    }
+
+    @page :first {
+      margin-top: 14mm;
+
+      @top-left {
+        content: none;
+      }
+
+      @top-right {
+        content: none;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif;
+      font-size: 10.3pt;
+      line-height: 1.55;
+      color: #1E2227;
+      background: #FFFFFF;
+    }
+
+    p {
+      margin: 0 0 3.2mm;
+    }
+
+    strong {
+      font-weight: 600;
+      color: #121417;
+    }
+
+    .letterhead {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10mm;
+      padding-bottom: 5mm;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 5mm;
+      min-width: 0;
+    }
+
+    .brand-lockup img {
+      width: 20mm;
+      height: 20mm;
+      object-fit: contain;
+    }
+
+    .company-name {
+      font-family: "Outfit", sans-serif;
+      font-size: 19pt;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.02;
+      color: #121417;
+    }
+
+    .company-name span {
+      color: {{ primary_color }};
+    }
+
+    .company-tagline {
+      margin-top: 1.4mm;
+      font-size: 8.2pt;
+      color: #5C6470;
+    }
+
+    .company-block {
+      text-align: right;
+      max-width: 72mm;
+    }
+
+    .company-block .legal {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 7.2pt;
+      color: #5C6470;
+      line-height: 1.5;
+    }
+
+    .company-block .legal strong {
+      color: #121417;
+      font-weight: 500;
+    }
+
+    .rule {
+      height: 1.4pt;
+      background: {{ primary_color }};
+      margin-bottom: 1.2mm;
+    }
+
+    .rule-thin {
+      height: 0.4pt;
+      background: #D7DBE0;
+      margin-bottom: 6mm;
+    }
+
+    .doc-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8mm;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 7.4pt;
+      color: #5C6470;
+      margin-bottom: 8mm;
+    }
+
+    .doc-meta div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8mm;
+    }
+
+    .doc-meta span {
+      color: #7A7F87;
+    }
+
+    .doc-meta strong {
+      color: #121417;
+      font-weight: 500;
+      font-size: 8pt;
+    }
+
+    .doc-meta .right {
+      text-align: right;
+    }
+
+    .recipient {
+      margin-bottom: 7mm;
+    }
+
+    .recipient .name {
+      font-weight: 600;
+      font-size: 11pt;
+      color: #121417;
+      margin-bottom: 0.8mm;
+    }
+
+    .recipient .detail {
+      font-size: 9.2pt;
+      color: #5C6470;
+      line-height: 1.5;
+    }
+
+    h1 {
+      font-family: "Outfit", sans-serif;
+      font-size: 24pt;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      margin: 0 0 2mm;
+      color: #121417;
+    }
+
+    .subtitle {
+      font-size: 10.5pt;
+      color: #5C6470;
+      margin: 0 0 7mm;
+      padding-bottom: 4mm;
+      border-bottom: 0.4pt solid #D7DBE0;
+    }
+
+    h2 {
+      font-family: "Outfit", sans-serif;
+      font-size: 12.5pt;
+      font-weight: 600;
+      letter-spacing: -0.012em;
+      margin: 7mm 0 2.6mm;
+      color: #121417;
+      break-after: avoid;
+    }
+
+    h3 {
+      font-size: 9.6pt;
+      font-weight: 600;
+      margin: 0 0 1.2mm;
+      color: #121417;
+      break-after: avoid;
+    }
+
+    .lead {
+      font-size: 10.6pt;
+      color: #2B3037;
+    }
+
+    .muted {
+      color: #6B6F76;
+      font-size: 8.6pt;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .facts {
+      margin: 1mm 0 3mm;
+    }
+
+    .facts td {
+      padding: 2.2mm 3mm;
+      border-bottom: 0.4pt solid #E6E8EB;
+      vertical-align: top;
+      font-size: 9.4pt;
+    }
+
+    .facts td.label {
+      width: 38%;
+      color: #6B6F76;
+      font-size: 8.7pt;
+    }
+
+    .facts tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .money {
+      margin: 2mm 0 3mm;
+    }
+
+    .money th {
+      text-align: left;
+      font-size: 7.6pt;
+      font-weight: 500;
+      color: #6B6F76;
+      padding: 0 3mm 2mm;
+      border-bottom: 0.8pt solid #121417;
+    }
+
+    .money th.num,
+    .money td.num {
+      text-align: right;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 8.6pt;
+    }
+
+    .money td {
+      padding: 2.1mm 3mm;
+      border-bottom: 0.4pt solid #E6E8EB;
+      font-size: 9.2pt;
+    }
+
+    .money tr.total td {
+      border-top: 0.8pt solid #121417;
+      border-bottom: 0;
+      padding-top: 2.6mm;
+      font-weight: 600;
+      background: #FAF7F3;
+    }
+
+    .money .negative {
+      color: #A82810;
+    }
+
+    .money .note {
+      font-size: 7.8pt;
+      color: #6B6F76;
+      padding-top: 1mm;
+    }
+
+    .callout {
+      border-left: 2.2pt solid {{ primary_color }};
+      background: #FAF7F3;
+      padding: 3.5mm 4mm;
+      margin: 3mm 0 4mm;
+      break-inside: avoid;
+    }
+
+    .callout .label {
+      font-size: 7.6pt;
+      color: #6B6F76;
+      margin-bottom: 0.8mm;
+    }
+
+    .callout .value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10.5pt;
+      color: #121417;
+    }
+
+    .term {
+      break-inside: avoid;
+      margin-bottom: 3.4mm;
+    }
+
+    .term p {
+      font-size: 9.3pt;
+      color: #3B4048;
+      margin: 0;
+    }
+
+    .terms-note {
+      font-size: 7.8pt;
+      color: #6B6F76;
+      margin-top: 2mm;
+    }
+
+    .closing {
+      break-inside: avoid;
+      margin-top: 8mm;
+    }
+
+    .signature {
+      margin-top: 10mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12mm;
+      break-inside: avoid;
+    }
+
+    .signature .line {
+      border-top: 0.6pt solid #121417;
+      width: 62mm;
+      padding-top: 2mm;
+    }
+
+    .signature .sign-name {
+      font-weight: 600;
+      font-size: 10pt;
+    }
+
+    .signature .sign-title {
+      font-size: 8.6pt;
+      color: #5C6470;
+    }
+
+    .signature .date {
+      text-align: right;
+      font-size: 8.4pt;
+      color: #5C6470;
+    }
+
+    .signature .date strong {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 8.2pt;
+    }
+
+    .footnote {
+      margin-top: 8mm;
+      padding-top: 3mm;
+      border-top: 0.4pt solid #D7DBE0;
+      font-size: 7.6pt;
+      color: #6B6F76;
+      line-height: 1.5;
+    }
+
+    .avoid-break {
+      break-inside: avoid;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="letterhead">
+    <div class="brand-lockup">
+      <img src="{{ company_logo }}" alt="{{ company_name }} logo">
+      <div>
+        <div class="company-name">{{ company_name_head }}{% if company_name_tail %} <span>{{ company_name_tail }}</span>{% endif %}</div>
+        {% if company_tagline %}<div class="company-tagline">{{ company_tagline }}</div>{% endif %}
+      </div>
+    </div>
+    <div class="company-block">
+      <div class="legal">
+        <strong>{{ company_legal_name }}</strong><br>
+        {{ company_address_html|safe }}<br>
+        {{ company_phone }}<br>
+        {{ company_email }}<br>
+        {{ company_website }}
+      </div>
+    </div>
+  </header>
+  <div class="rule"></div>
+  <div class="rule-thin"></div>
+
+  <div class="doc-meta">
+    <div>
+      <span>Offer ID</span>
+      <strong>{{ display_offer_id }}</strong>
+      <span>{% if official_offer_number and official_offer_number != offer_number %}Ref {{ offer_number }} · {% endif
+        %}Revision {{ revision_number }}</span>
+    </div>
+    <div class="right">
+      <span>Issue date</span>
+      <strong>{{ offer_date }}</strong>
+      <span>Valid until {{ expiry_date }}</span>
+    </div>
+  </div>
+
+  <div class="recipient">
+    <div class="name">{{ candidate_name }}{% if candidate_code %} <span class="muted">({{ candidate_code }})</span>{%
+      endif %}</div>
+    {% if candidate_address_html or candidate_email or candidate_phone %}
+    <div class="detail">
+      {% if candidate_address_html %}{{ candidate_address_html|safe }}<br>{% endif %}
+      {% if candidate_email %}{{ candidate_email }}{% if candidate_phone %} · {% endif %}{% endif %}
+      {% if candidate_phone %}{{ candidate_phone }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <h1>OFFER LETTER</h1>
+  <p class="subtitle">Offer of employment · {{ job_title }}{% if department %} · {{ department }}{% endif %} · {{
+    employment_type_label }}</p>
+
+  <p class="lead">Dear {{ candidate_name }},</p>
+  {% if company_intro %}
+  <p>{{ company_intro }}</p>
+  {% endif %}
+  <p>
+    {{ company_name }} is pleased to offer you the position of <strong>{{ job_title }}</strong>{% if department %} in
+    our {{ department }} team{% endif %}. This offer of employment sets out the principal terms of your engagement and
+    is subject to the terms and conditions below.
+  </p>
+
+  <h2>Employment details</h2>
+  {{ employment_table|safe }}
+
+  {% if responsibilities %}
+  <h2>Key responsibilities</h2>
+  <p>{{ responsibilities }}</p>
+  {% endif %}
+
+  <h2>Compensation</h2>
+  {{ compensation_table|safe }}
+
+  <h2>Terms and conditions</h2>
+  {{ terms_html|safe }}
+  <p class="terms-note">These clauses form part of the offer and are supplied and approved by {{ company_name }}.</p>
+
+  <div class="closing">
+    <h2>Joining &amp; verification</h2>
+    <p>
+      Your employment is expected to begin on <strong>{{ joining_date }}</strong> at {{ work_location }}.
+      Please report to <strong>{{ reporting_manager }}</strong>.
+      {% if terms.joining_requirements %}
+      Bring the documents listed in the joining requirements, and contact us in advance if any detail needs clarification.
+      {% else %}
+      Please bring original identity and qualification documents for verification on your joining date, and contact us in advance if any detail needs clarification.
+      {% endif %}
+    </p>
+    {% if candidate_declaration %}
+    <div class="callout">
+      <div class="label">Candidate declaration</div>
+      <p style="margin:0; font-size:9pt; color:#2B3037;">{{ candidate_declaration }}</p>
+    </div>
+    {% endif %}
+
+    <table style="width:100%; border-collapse:collapse; margin-top:8mm; break-inside:avoid;">
+      <tr>
+        <td style="vertical-align:bottom; padding:0; width:66mm;">
+          {% if signature_image_data %}
+          <img src="{{ signature_image_data }}" alt="Authorised signature"
+            style="max-height:14mm; max-width:56mm; display:block; margin-bottom:1.5mm; object-fit:contain;">
+          {% else %}
+          <div style="height:10mm;"></div>
+          {% endif %}
+          <div style="border-top:0.6pt solid #121417; width:62mm; padding-top:2mm;">
+            <div style="font-weight:600; font-size:10pt; color:#121417;">{{ signatory_name }}</div>
+            <div style="font-size:8.6pt; color:#5C6470;">{{ signatory_title }}</div>
+            <div style="font-size:8.6pt; color:#5C6470;">{{ company_name }}</div>
+          </div>
+        </td>
+        <td style="vertical-align:bottom; text-align:center; padding:0 4mm;">
+          {% if seal_image_data %}
+          <img src="{{ seal_image_data }}" alt="Company seal"
+            style="max-height:20mm; max-width:20mm; object-fit:contain; display:inline-block;">
+          {% endif %}
+        </td>
+        <td style="vertical-align:bottom; text-align:right; padding:0; font-size:8.4pt; color:#5C6470;">
+          Authorised signatory<br>
+          <strong style="font-family:'JetBrains Mono',monospace; font-size:8.2pt; color:#121417;">{{ offer_date }}</strong>
+        </td>
+      </tr>
+    </table>
+
+    {% if show_candidate_signature_block %}
+    <table style="width:100%; border-collapse:collapse; margin-top:8mm; break-inside:avoid;">
+      <tr>
+        <td style="vertical-align:bottom; padding:0; width:74mm;">
+          <div style="height:9mm;"></div>
+          <div style="border-top:0.6pt solid #121417; width:66mm; padding-top:2mm;">
+            <div style="font-weight:600; font-size:10pt; color:#121417;">{{ candidate_name }}</div>
+            <div style="font-size:8.6pt; color:#5C6470;">Candidate acceptance signature</div>
+          </div>
+        </td>
+        <td style="vertical-align:bottom; text-align:right; padding:0; font-size:8.4pt; color:#5C6470;">
+          Date<br>
+          <strong style="font-family:'JetBrains Mono',monospace; font-size:8.2pt; color:#121417;">____________________</strong>
+        </td>
+      </tr>
+    </table>
+    {% endif %}
+
+    {% if verification_qr_data_uri %}
+    <table style="width:100%; border-collapse:collapse; margin-top:8mm; border:0.5pt solid #D7DBE0; background:#FAF7F3; break-inside:avoid;">
+      <tr>
+        <td style="padding:3.5mm 4mm; vertical-align:middle;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:7.6pt; font-weight:600; color:{{ primary_color }};">
+            Official authenticity verification
+          </div>
+          <div style="font-size:8.6pt; color:#121417; margin-top:1mm;">
+            Offer ID: <strong style="font-family:'JetBrains Mono',monospace;">{{ display_offer_id }}</strong>
+          </div>
+          <div style="font-size:7.5pt; color:#5C6470; margin-top:1mm; word-break:break-all; overflow-wrap:anywhere;">
+            Scan the QR code or verify online at {{ verification_url }}
+          </div>
+        </td>
+        <td style="width:28mm; padding:3mm 4mm 3mm 2mm; vertical-align:middle; text-align:right;">
+          <img src="{{ verification_qr_data_uri }}" alt="Verification QR code"
+            style="width:22mm; height:22mm; display:inline-block; vertical-align:middle;">
+        </td>
+      </tr>
+    </table>
+    {% endif %}
+  </div>
+
+  <div class="footnote">
+    {{ footer_note }}<br>
+    {{ company_name }} · {{ company_address_line }} · {{ company_phone }} · {{ company_email }}
+  </div>
+</body>
+
+</html>

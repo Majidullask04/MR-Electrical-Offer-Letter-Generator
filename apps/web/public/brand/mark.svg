@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="favCopper" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C85D19"/>
+      <stop offset="100%" stop-color="#9C4208"/>
+    </linearGradient>
+    <linearGradient id="favSteel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E2227"/>
+      <stop offset="100%" stop-color="#101214"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Chamfered Engineering Shield Chassis -->
+  <path d="M12 2 H52 L62 12 V52 L52 62 H12 L2 52 V12 Z" fill="url(#favSteel)" stroke="#2C323A" stroke-width="2"/>
+
+  <!-- Busbar Monogram Base -->
+  <path d="M14 48 V20 L24 34 L32 24 L40 34 L50 20 V48 H44 V29 L38 38 H36 L32 32 L28 38 H26 L20 29 V48 Z" fill="#E5E8EC" opacity="0.95"/>
+
+  <!-- High Voltage Central Conductor Surge -->
+  <path d="M32 14 L24 30 H34 L28 46 L42 28 H32 Z" fill="url(#favCopper)"/>
+
+  <!-- Corner Terminal Indicators -->
+  <circle cx="12" cy="12" r="2" fill="#B35010"/>
+  <circle cx="52" cy="52" r="2" fill="#0E639C"/>
+</svg>

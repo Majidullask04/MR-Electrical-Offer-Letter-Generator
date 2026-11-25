@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: offerlater-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-offerlater}
+      POSTGRES_USER: ${POSTGRES_USER:-offerlater}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-offerlater_dev}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - offerlater_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-offerlater} -d ${POSTGRES_DB:-offerlater}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: offerlater-api
+    profiles: ["full"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://offerlater:offerlater_dev@db:5432/offerlater
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-please-32-chars-minimum}
+      FRONTEND_URL: http://localhost:3000
+      COOKIE_SECURE: "false"
+      EMAIL_PROVIDER: console
+      STORAGE_DIR: /data/storage
+    ports:
+      - "8000:8000"
+    volumes:
+      - offerlater_storage:/data/storage
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_APP_NAME: OfferLater
+    container_name: offerlater-web
+    profiles: ["full"]
+    depends_on:
+      - api
+    environment:
+      API_URL: http://api:8000
+      NEXT_PUBLIC_APP_NAME: OfferLater
+    ports:
+      - "3000:3000"
+
+volumes:
+  offerlater_pgdata:
+  offerlater_storage:
